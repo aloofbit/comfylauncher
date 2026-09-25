@@ -297,25 +297,18 @@ namespace ComfyLauncher
             }
             var dxvk = DxvkRow(client, packages.Obj("dxvk"), home, Was("dxvk"));
             if (dxvk != null) gameFixes.Add(dxvk);
-            app.Rows.AddRange(ourMods);
-            if (gameFixes.Count > 0)
-            {
-                Heading("Mods", "Game fixes");
-                app.Rows.AddRange(gameFixes);
-            }
-            foreach (var (title, rows) in sections)
-            {
-                Heading("Mods", title);
-                app.Rows.AddRange(rows);
-            }
 
-            // ---- Mods: the HD packs, from packages.json. A file on disk
-            // belongs to a package only when its size is the package's.
+            // ---- Mods: the packages, from packages.json. A file on disk
+            // belongs to a package only when its size is the package's. A
+            // section marked `ours` is drawn under ComfyCraft with no heading
+            // of its own: comfylogin, an optional patch of ours, since
+            // 2026-09-25. The rest are the HD packs, each under its title.
             var needIds = new Dictionary<Row, List<string>>();
             var parentIds = new Dictionary<Row, string>();
-            foreach (var sec in packages.Objs("sections"))
+            void Section(Dictionary<string, object> sec)
             {
-                Heading("Mods", sec.Str("title"));
+                bool ours = sec.Bool("ours");
+                if (!ours) Heading("Mods", sec.Str("title"));
                 string pack = sec.Str("pack"), zip = sec.Str("_zip");
                 foreach (var link in sec.Objs("links"))
                     Add("Mods", RowKind.Link, link.Str("name"), link.Str("note")).Url = link.Str("url");
@@ -326,6 +319,7 @@ namespace ComfyLauncher
                     row.Id = pkg.Str("id");
                     row.Pack = pack;
                     row.Toggle = true;
+                    row.Ours = ours;
                     row.Advice = pkg.Str("advice");
                     row.Conflicts.AddRange(pkg.Strs("conflicts"));
                     needIds[row] = pkg.Strs("needs");
@@ -383,6 +377,20 @@ namespace ComfyLauncher
                     }
                 }
             }
+
+            app.Rows.AddRange(ourMods);
+            foreach (var sec in packages.Objs("sections").Where(s => s.Bool("ours"))) Section(sec);
+            if (gameFixes.Count > 0)
+            {
+                Heading("Mods", "Game fixes");
+                app.Rows.AddRange(gameFixes);
+            }
+            foreach (var (title, rows) in sections)
+            {
+                Heading("Mods", title);
+                app.Rows.AddRange(rows);
+            }
+            foreach (var sec in packages.Objs("sections").Where(s => !s.Bool("ours"))) Section(sec);
 
             // ---- Mods: what no package claims. Patches keep the name this
             // copy was told, or the manifest's name for the letter.

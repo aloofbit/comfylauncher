@@ -89,4 +89,5 @@ S | Sound and music
 T | HD character textures
 U | Ultra textures
 V | Custom comfy content
+W | Saved accounts
 Y | Auto login
