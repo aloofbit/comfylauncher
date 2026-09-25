@@ -37,10 +37,10 @@ The launcher reads `https://comfycraft.dedyn.io/launcher/manifest.json` and down
 You must have the [.NET SDK](https://dotnet.microsoft.com/download). The exe runs on .NET Framework 4.7.2, which is part of Windows 10 and Windows 11. Players do not install anything.
 
 ```
-dotnet build ComfyLauncher.csproj -c Release
+dotnet build src\ComfyLauncher.csproj -c Release
 ```
 
-The exe is `bin\Release\net472\ComfyLauncher.exe`.
+The exe is `src\bin\Release\net472\ComfyLauncher.exe`.
 
 ## How to check your copy of the exe
 
@@ -51,7 +51,7 @@ The build is deterministic. The same source code and the same SDK version make t
 3. In PowerShell, get the hash of each exe:
 
    ```
-   Get-FileHash bin\Release\net472\ComfyLauncher.exe
+   Get-FileHash src\bin\Release\net472\ComfyLauncher.exe
    Get-FileHash <your folder>\ComfyLauncher.exe
    ```
 
