@@ -719,7 +719,9 @@ if (Test-Path -LiteralPath $packagesFile) {
                 if (-not $ids.ContainsKey($need) -and -not ($modFiles | Where-Object { $_ -ieq $need })) { throw "packages.json: '$($pkg.id)' needs '$need', which is no package and no mod." }
             }
             if ($pkg.parent -and -not $ids.ContainsKey($pkg.parent)) { throw "packages.json: '$($pkg.id)' has parent '$($pkg.parent)', which is no package." }
-            foreach ($c in @($pkg.conflicts | Where-Object { $_ })) { if (-not $ids.ContainsKey($c)) { throw "packages.json: '$($pkg.id)' conflicts with '$c', which is no package." } }
+            # patch:<letter> names a player's own patch, which the launcher
+            # refuses to tick past (comfylogin and the old patch-Y).
+            foreach ($c in @($pkg.conflicts | Where-Object { $_ })) { if (-not $ids.ContainsKey($c) -and $c -notmatch '^patch:[A-Za-z0-9]$') { throw "packages.json: '$($pkg.id)' conflicts with '$c', which is no package and no patch:<letter>." } }
             $lists = @()
             if ($pkg.choices) { foreach ($ch in @($pkg.choices)) { $lists += ,@($ch.parts) } } else { $lists += ,@($pkg.parts) }
             foreach ($list in $lists) {
