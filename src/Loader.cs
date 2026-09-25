@@ -69,6 +69,7 @@ namespace ComfyLauncher
             var self = manifest?.Obj("launcher");
             app.SelfBehind = SelfUpdate.Behind(self.Str("release"));
             app.SelfUrl = Absolute(manifestUrl, self.Str("url"));
+            app.SelfSha = self.Str("sha256");
             client.ReadAside(home);
             manifest = manifest ?? new Dictionary<string, object>();
             var patchNames = manifest.Obj("patchNames");
@@ -140,6 +141,9 @@ namespace ComfyLauncher
             foreach (var item in manifest.Objs("items"))
             {
                 string name = item.Str("name"), kind = item.Str("kind");
+                // A name or path that would land outside its folder is left
+                // out, as if the manifest had not named it. See Safe.
+                if (kind == "addon" ? !Safe.IsName(name) : !Safe.IsRelative(item.Str("path"))) continue;
                 var part = new Part { Url = Absolute(manifestUrl, item.Str("url")), Sha256 = item.Str("sha256"), Size = item.Long("size") };
                 string target;
                 bool offOnDisk = false;
@@ -147,7 +151,7 @@ namespace ComfyLauncher
                 if (kind == "addon")
                 {
                     part.Type = PartType.Addon; part.Name = name;
-                    target = client.PathOf(@"Interface\AddOns\" + name);
+                    target = client.AddonPath(name);
                 }
                 else
                 {
@@ -190,7 +194,7 @@ namespace ComfyLauncher
                 row.Id = "item:" + name;
                 row.StateKey = name;
                 row.Version = item.Str("version");
-                row.Supersedes.AddRange(item.Strs("supersedes"));
+                row.Supersedes.AddRange(item.Strs("supersedes").Where(Safe.IsName));
                 row.Have = h;
                 row.On = true;
                 row.Ours = true;
@@ -213,7 +217,8 @@ namespace ComfyLauncher
             foreach (var mod in mods.Where(m => !m.Bool("variant")))
             {
                 string file = mod.Str("file");
-                if (file == "") continue;
+                // A mod is one file in the client's own folder, beside WoW.exe.
+                if (!Safe.IsName(file)) continue;
                 accounted.Add(file);
                 bool present = File.Exists(client.PathOf(file));
                 bool enabled = client.DllEnabled(file);
@@ -273,7 +278,7 @@ namespace ComfyLauncher
                     // An addon that went aside with its switched-off mod is
                     // not gone: switching the mod on moves it back.
                     bool gone = list.Any(p => p.Type == PartType.Addon
-                                              ? !Directory.Exists(client.PathOf(@"Interface\AddOns\" + p.Name))
+                                              ? !Directory.Exists(client.AddonPath(p.Name))
                                                 && !(p.OffWithMod && Directory.Exists(Path.Combine(home, "set-aside", "AddOns", p.Name)))
                                             : p.Type == PartType.File && !File.Exists(client.PathOf(p.Name)));
                     if (gone) row.Have = Have.Missing;
@@ -514,7 +519,7 @@ namespace ComfyLauncher
         static Row DxvkRow(Client client, Dictionary<string, object> spec, string home, string was)
         {
             string file = spec.Str("file");
-            if (file == "") return null;
+            if (!Safe.IsName(file)) return null;
             var known = spec.Objs("builds").Select(b => new Build
             {
                 Name = b.Str("name"), Note = b.Str("note"), Sha256 = b.Str("sha256"), Url = b.Str("url"), Size = b.Long("size"),
@@ -593,7 +598,10 @@ namespace ComfyLauncher
             foreach (var kv in extract)
             {
                 string to = (kv.Value as string ?? "").Replace('\\', '/');
+                // Where it lands must be inside the client; see Safe.
+                if (!Safe.IsRelative(to)) continue;
                 var addon = Regex.Match(to, @"^Interface/AddOns/([^/]+)/?$", RegexOptions.IgnoreCase);
+                if (addon.Success && !Safe.IsName(addon.Groups[1].Value)) continue;
                 if (addon.Success) parts.Add(new Part { Type = PartType.Addon, Name = addon.Groups[1].Value, Url = url, Sha256 = sha, Extract = kv.Key, OffWithMod = offWithMod });
                 else if (to.Equals(file, StringComparison.OrdinalIgnoreCase)) parts.Add(new Part { Type = PartType.Dll, Name = file, Url = url, Sha256 = sha, Extract = kv.Key });
                 else parts.Add(new Part { Type = PartType.File, Name = to.Replace('/', '\\'), Url = url, Sha256 = sha, Extract = kv.Key });

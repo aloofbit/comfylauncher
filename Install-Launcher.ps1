@@ -152,14 +152,12 @@ if ($value)    { Write-Item ("manifest:  " + $value) }
 elseif ($Live) { Write-Item  "manifest:  the live one" }
 else           { Write-Item  "manifest:  whatever this copy already had" }
 
-# WILL THIS COPY UNDO ITSELF ON ITS FIRST RUN?
+# WILL THIS COPY REPLACE ITSELF ON ITS FIRST RUN?
 #
-# It will, and it did on 2026-09-20, and the way it fails is the worst kind:
-# silently and backwards. The version is compared for EQUALITY, so it fires in
-# either direction. Install a copy whose release is NEWER than the manifest's
-# and the self update fires, overwrites it with the published one, restarts,
-# and runs the old code. The edit is gone, the test says the change did not
-# work, and nothing on screen mentions any of it.
+# Only when the manifest's release is HIGHER, since 1.14. Until then any
+# difference fired it, so a copy NEWER than the manifest's overwrote itself
+# with the published one and ran the old code, silently; that happened on
+# 2026-09-20. A copy that is older than the manifest still replaces itself.
 $mine = ''
 $m = [regex]::Match([IO.File]::ReadAllText((Join-Path $Here 'src\ComfyLauncher.csproj')), '<Version>([^<]+)</Version>')
 if ($m.Success) { $mine = $m.Groups[1].Value }
@@ -182,14 +180,17 @@ try {
 }
 
 Write-Host ''
-if ($mine -and $theirs -and $mine -ne $theirs) {
+$older = $false
+$vMine = $null; $vTheirs = $null
+if ([version]::TryParse($mine, [ref] $vMine) -and [version]::TryParse($theirs, [ref] $vTheirs)) { $older = $vTheirs -gt $vMine }
+if ($older) {
     Write-Host '  THIS COPY WILL REPLACE ITSELF THE FIRST TIME IT RUNS.' -ForegroundColor Red
     Write-Item "what was just copied in     $mine"
     Write-Item "what the manifest describes $theirs"
     Write-Item "                            $where"
     Write-Host ''
-    Write-Host '  The launcher keeps itself current against that manifest, and the' -ForegroundColor Yellow
-    Write-Host '  numbers differ, so it will put the published copy back and run that.' -ForegroundColor Yellow
+    Write-Host '  The launcher keeps itself current against that manifest, and this' -ForegroundColor Yellow
+    Write-Host '  copy is older, so it will put the published copy in and run that.' -ForegroundColor Yellow
     Write-Host '  Build the manifest first, then install again:' -ForegroundColor Yellow
     Write-Host ''
     Write-Host '    .\Build-Manifest.ps1' -ForegroundColor Cyan

@@ -87,7 +87,11 @@ namespace ComfyLauncher
             return null;
         }
 
-        public string PathOf(string relative) => System.IO.Path.Combine(Root, relative.Replace('/', '\\'));
+        // Inside the client or refused: see Safe.
+        public string PathOf(string relative) => Safe.Join(Root, relative);
+
+        // Interface\AddOns\<name>, for a name that is one plain folder name.
+        public string AddonPath(string name) => Safe.Join(Root, @"Interface\AddOns\" + Safe.Name(name));
 
         public static Client Read(string root)
         {

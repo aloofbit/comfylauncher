@@ -839,6 +839,10 @@ $manifest = [ordered]@{
         # So the launcher can draw a real bar while replacing itself rather than
         # a bar with no total. Written after the zip exists, below.
         size    = 0
+        # The zip's own hash. A launcher from 1.14 on refuses to replace
+        # itself with a download that does not match it, or when it is
+        # missing. Written after the zip exists, below.
+        sha256  = ''
     }
     # The other way in, for the website to offer beside the launcher. Nothing
     # in the launcher reads this.
@@ -880,6 +884,7 @@ Remove-Item -LiteralPath $stage -Recurse -Force
 # in here and the file rewritten. One pass would need the zip first, and the
 # zip needs nothing from the manifest, but the ordering reads better this way.
 $manifest.launcher.size = (Get-Item -LiteralPath (Join-Path $Out 'ComfyLauncher.zip')).Length
+$manifest.launcher.sha256 = (Get-FileHash -LiteralPath (Join-Path $Out 'ComfyLauncher.zip') -Algorithm SHA256).Hash.ToLowerInvariant()
 ($manifest | ConvertTo-Json -Depth 10) | Set-Content -LiteralPath $path -Encoding UTF8
 
 Write-Head 'Written'

@@ -273,6 +273,7 @@ namespace ComfyLauncher
         // the new exe, which does the rest.
         public bool SelfBehind;
         public string SelfUrl = "";
+        public string SelfSha = "";     // the zip's sha256, which Replace requires
         public string RestartInto;
         public string Home = "";        // the launcher's folder: comfylauncher.json, set-aside, downloads
         public Dictionary<string, object> State = new Dictionary<string, object>();

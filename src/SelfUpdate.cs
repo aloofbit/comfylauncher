@@ -40,7 +40,11 @@ namespace ComfyLauncher
             }
         }
 
-        public static bool Behind(string release) => release != "" && release != Version && !IsSource;
+        // ONLY UPWARDS. It was any difference, which let a manifest put an
+        // older launcher back in place of a newer one. A number that does not
+        // read as a version is not an update.
+        public static bool Behind(string release) =>
+            !IsSource && System.Version.TryParse(release, out var theirs) && System.Version.TryParse(Version, out var mine) && theirs > mine;
 
         // AT EVERY START, beside a player's copy: the .old an update left, the
         // .cmd and .ps1 that launchers up to 0.8 were made of, and the copy of
@@ -71,21 +75,32 @@ namespace ComfyLauncher
         // The row Update available carries while the launcher is behind: it
         // goes first, and on its own, since the launcher that does the rest
         // should be the new one.
-        public static Row Row(App app, string url)
+        public static Row Row(App app, string url, string sha256)
         {
             var row = new Row { Id = "self", Tab = "", Kind = RowKind.Required, Label = "the launcher", Have = Have.Behind, On = true };
             row.Custom = new System.Collections.Generic.List<Op>
             {
-                new Op { Text = "download " + url + ", put its ComfyLauncher.exe in place of this one, and start it", Run = p => Replace(app, url, p) },
+                new Op { Text = "download " + url + ", check it, put its ComfyLauncher.exe in place of this one, and start it", Run = p => Replace(app, url, sha256, p) },
             };
             return row;
         }
 
-        static void Replace(App app, string url, Action<long> progress)
+        // THE ZIP IS CHECKED BEFORE ANYTHING IN IT RUNS, against the sha256
+        // the manifest gives for it. A manifest with no hash updates nothing:
+        // an exe that replaces itself and starts is the one download that
+        // must never fail open. Build-Manifest.ps1 writes the hash since 1.14.
+        static void Replace(App app, string url, string sha256, Action<long> progress)
         {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(sha256 ?? "", "^[0-9a-fA-F]{64}$"))
+                throw new IOException("the manifest gives no hash for the new launcher, so it is not installed");
             string downloads = Path.Combine(app.Home, "downloads"), zip = Path.Combine(downloads, "ComfyLauncher.zip");
             if (File.Exists(zip + ".part")) File.Delete(zip + ".part");
             Net.Download(url, 0, 0, zip + ".part", "", progress);
+            if (!Client.Sha256(zip + ".part").Equals(sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(zip + ".part");
+                throw new IOException("the new launcher did not match its hash, so it is not installed");
+            }
 
             string fresh = Exe + ".new";
             using (var z = ZipFile.OpenRead(zip + ".part"))

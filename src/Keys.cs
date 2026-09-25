@@ -245,7 +245,7 @@ namespace ComfyLauncher
                 // the rest after it restarts.
                 if (app.SelfBehind)
                 {
-                    RunOrConfirm(app, new List<Row> { SelfUpdate.Row(app, app.SelfUrl) }, play: false);
+                    RunOrConfirm(app, new List<Row> { SelfUpdate.Row(app, app.SelfUrl, app.SelfSha) }, play: false);
                     return;
                 }
                 var steps = new List<Row>();

@@ -28,7 +28,7 @@ namespace ComfyLauncher
         // something aside never overwrites what was set aside before.
         static string Free(string dir, string name)
         {
-            string path = Path.Combine(dir, name);
+            string path = Safe.Join(dir, Safe.Name(name));
             for (int i = 2; File.Exists(path) || Directory.Exists(path); i++)
                 path = Path.Combine(dir, Path.GetFileNameWithoutExtension(name) + " (" + i + ")" + Path.GetExtension(name));
             return path;
@@ -89,7 +89,7 @@ namespace ComfyLauncher
             {
                 // Only a patch has a letter; an unset one is \0, which no path may hold.
                 string patch = p.Type == PartType.Patch ? c.PathOf(@"Data\patch-" + p.Letter + ".mpq") : "";
-                string addon = p.Type == PartType.Addon ? c.PathOf(@"Interface\AddOns\" + p.Name) : "";
+                string addon = p.Type == PartType.Addon ? c.AddonPath(p.Name) : "";
                 switch (action)
                 {
                     case "install":
@@ -181,7 +181,7 @@ namespace ComfyLauncher
                         }
                         if (p.Type == PartType.Addon && p.OffWithMod && !Directory.Exists(addon))
                         {
-                            string from = Path.Combine(aside, "AddOns", p.Name);
+                            string from = Safe.Join(Path.Combine(aside, "AddOns"), Safe.Name(p.Name));
                             ops.Add(new Op { Text = "move " + AsideDir + @"\AddOns\" + p.Name + " back to " + Rel(app, addon),
                                 Run = _ => { if (Directory.Exists(from)) Directory.Move(from, addon); } });
                         }
@@ -214,7 +214,7 @@ namespace ComfyLauncher
                     case "restore":
                         if (p.Type == PartType.Addon)
                         {
-                            string from = Path.Combine(aside, "AddOns", p.Name);
+                            string from = Safe.Join(Path.Combine(aside, "AddOns"), Safe.Name(p.Name));
                             ops.Add(new Op { Text = "move " + AsideDir + @"\AddOns\" + p.Name + " back to " + Rel(app, addon), Run = _ => Directory.Move(from, addon) });
                         }
                         if (p.Type == PartType.Patch)
@@ -265,7 +265,7 @@ namespace ComfyLauncher
             if (action == "install" || action == "update" || action == "reinstall")
                 foreach (var old in row.Supersedes)
                 {
-                    string dead = c.PathOf(@"Interface\AddOns\" + old);
+                    string dead = c.AddonPath(old);
                     if (!Directory.Exists(dead)) continue;
                     ops.Add(new Op { Text = "move " + Rel(app, dead) + " to " + AsideDir + @"\AddOns, now part of " + row.Label,
                         Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "AddOns")); Directory.Move(dead, Free(Path.Combine(aside, "AddOns"), old)); } });
@@ -472,14 +472,26 @@ namespace ComfyLauncher
 
             string work = Path.Combine(app.Home, "work", "added");
             if (Directory.Exists(work)) Directory.Delete(work, true);
-            try { ZipFile.ExtractToDirectory(zip, work); }
+            // Entry by entry through Safe, not ZipFile.ExtractToDirectory:
+            // this is a zip from any link a player pastes.
+            ZipArchive archive;
+            try { archive = ZipFile.OpenRead(zip); }
             catch { throw new IOException("that downloaded, but it is not a zip this can open"); }
+            using (archive)
+                foreach (var e in archive.Entries)
+                {
+                    string name = e.FullName.Replace('\\', '/');
+                    if (name == "" || name.EndsWith("/")) continue;
+                    string to = Safe.Join(work, name);
+                    Directory.CreateDirectory(Path.GetDirectoryName(to));
+                    e.ExtractToFile(to, true);
+                }
 
             var found = FindAddonFolders(work);
             if (found.Count == 0) throw new IOException("no addon in there: nothing with a .toc file");
             foreach (var (path, name) in found)
             {
-                string dest = app.Client.PathOf(@"Interface\AddOns\" + name);
+                string dest = app.Client.AddonPath(name);
                 if (Directory.Exists(dest)) Directory.Delete(dest, true);
                 try { Directory.Move(path, dest); } catch (IOException) { CopyTree(path, dest); }
             }
@@ -504,7 +516,11 @@ namespace ComfyLauncher
                     var pool = plain.Count > 0 ? plain : tocs.ToList();
                     string pick = pool.FirstOrDefault(t => Path.GetFileNameWithoutExtension(t).Equals(leaf, StringComparison.OrdinalIgnoreCase))
                                   ?? pool.OrderBy(t => Path.GetFileName(t).Length).First();
-                    found.Add((dir, Path.GetFileNameWithoutExtension(pick)));
+                    // A .toc named ".toc" or "...toc" gives "" or "..", which
+                    // would name Interface\AddOns or Interface itself. Such a
+                    // folder is no addon, and is left behind.
+                    string addonName = Path.GetFileNameWithoutExtension(pick);
+                    if (Safe.IsName(addonName)) found.Add((dir, addonName));
                     continue;
                 }
                 foreach (var sub in Directory.GetDirectories(dir)) stack.Push(sub);
@@ -529,7 +545,7 @@ namespace ComfyLauncher
         // may hold the folder itself, or its files at the top.
         static void InstallAddon(App app, string zip, Part part, string dest)
         {
-            string work = Path.Combine(app.Home, "work", part.Name);
+            string work = Safe.Join(Path.Combine(app.Home, "work"), Safe.Name(part.Name));
             if (Directory.Exists(work)) Directory.Delete(work, true);
             Directory.CreateDirectory(work);
             using (var z = ZipFile.OpenRead(zip))
@@ -540,7 +556,10 @@ namespace ComfyLauncher
                     string name = e.FullName.Replace('\\', '/');
                     if (prefix != "") { if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue; name = name.Substring(prefix.Length); }
                     if (name == "" || name.EndsWith("/")) continue;
-                    string to = Path.Combine(work, name.Replace('/', '\\'));
+                    // ZIP SLIP: an entry named "a/../../VanillaFixes.exe" or
+                    // "C:/x" would write outside the folder. Safe refuses it,
+                    // and the whole install fails rather than half happening.
+                    string to = Safe.Join(work, name);
                     Directory.CreateDirectory(Path.GetDirectoryName(to));
                     e.ExtractToFile(to, true);
                 }
