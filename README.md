@@ -21,6 +21,7 @@ Little launcher project for smol server. Thanks for seeing.
 - Addons repo search
 - Realm choice
 - Small File
+- Works through Steam overlay
 - Secret features :)
 
 ## Build
