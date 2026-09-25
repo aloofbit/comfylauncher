@@ -250,7 +250,7 @@
     "sha256": "ab25a789098921d922001ee9f178c7274c547c20540fe4b0572af4312b474ce5"
   },
   {
-    "_why": "Our own three, added 2026-09-21 and re-pinned 2026-09-22 to that day's releases: comfygrass, comfyatmosphere (comfyfog.dll) and comfytime. comfygrass was re-pinned again on 2026-09-23 to v0.2.1-alpha, which makes rain show again, and comfyatmosphere the same day to v0.4.1-alpha, which adds its controls to Video > Shaders, removes the sun rays, and keeps the addon silent when the DLL is turned off. v0.4.0-alpha was pinned for one commit and never deployed; its addon printed a chat line at every login once the launcher had turned the DLL off. comfyatmosphere was re-pinned on 2026-09-24 to v0.5.0-alpha, which brings the sun rays back, adds a Volumetric Light Quality control, stops the light jittering while walking, and makes it cheaper. Every pin is our own hash of a fresh download of the release asset, and each matched the sha256 digest GitHub publishes for it. A client that already carries one of them gets an unticked `update` row when its pin moves, found by file_sha256. They coordinate among themselves at start up (each waits for the others to finish patching the Direct3D device), so the order the launcher appends their dlls.txt lines in does not matter. All three are alpha and ask for a backup first.",
+    "_why": "Our own three, added 2026-09-21 and re-pinned 2026-09-22 to that day's releases: comfygrass, comfyatmosphere (comfyfog.dll) and comfytime. comfygrass was re-pinned again on 2026-09-23 to v0.2.1-alpha, which makes rain show again, and comfyatmosphere the same day to v0.4.1-alpha, which adds its controls to Video > Shaders, removes the sun rays, and keeps the addon silent when the DLL is turned off. v0.4.0-alpha was pinned for one commit and never deployed; its addon printed a chat line at every login once the launcher had turned the DLL off. comfyatmosphere was re-pinned on 2026-09-24 to v0.5.0-alpha, which brings the sun rays back, adds a Volumetric Light Quality control, stops the light jittering while walking, and makes it cheaper. It was re-pinned on 2026-09-25 to v0.5.1-alpha, which makes the volumetric light work with anti-aliasing (multisampling) on. Every pin is our own hash of a fresh download of the release asset, and each matched the sha256 digest GitHub publishes for it. A client that already carries one of them gets an unticked `update` row when its pin moves, found by file_sha256. They coordinate among themselves at start up (each waits for the others to finish patching the Direct3D device), so the order the launcher appends their dlls.txt lines in does not matter. All three are alpha and ask for a backup first.",
     "name": "Swaying grass",
     "file": "comfygrass.dll",
     "note": "grass sways in the wind and parts around you",
@@ -270,11 +270,11 @@
     "name": "Fog and light",
     "file": "comfyfog.dll",
     "note": "moodier fog, sun rays, and light through the trees",
-    "version": "v0.5.0-alpha",
+    "version": "v0.5.1-alpha",
     "from": "https://github.com/aloofbit/comfyatmosphere",
-    "url": "https://github.com/aloofbit/comfyatmosphere/releases/download/v0.5.0-alpha/comfyatmosphere-v0.5.0-alpha.zip",
-    "sha256": "fc49bb92863feb3b5be95ba9254d7465d6556ccba9ac5b38e0d0df21d233dcef",
-    "file_sha256": "80f89c7a3574007fca262419395167b827384b92cc4fa0075baf110c5ff13ef6",
+    "url": "https://github.com/aloofbit/comfyatmosphere/releases/download/v0.5.1-alpha/comfyatmosphere-v0.5.1-alpha.zip",
+    "sha256": "752cade7d674e93fd806c380e258566e95576eaef28386b8ddce0d8d79b8180b",
+    "file_sha256": "faac292076a06bdcedd53f5e4ab01b2020fa0a6a638416364fdf177212edf517",
     "_extract_comment": "The addon is the fog, light, sun ray and cloud controls in Video > Shaders. It reads CVars that the DLL registers, so it adds nothing when the DLL is not loaded. The ini comes along, and must: v0.5.0-alpha changed its defaults (shadow map size, samples, redraw rate, smoothing) and brought back the [rays] section, and an old ini's values override the new defaults, so a client that kept it would not get the lower cost.",
     "extract": {
       "comfyfog.dll": "comfyfog.dll",
