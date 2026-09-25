@@ -37,13 +37,11 @@ namespace ComfyLauncher
             int y = 0;
 
             // The art needs 84 columns and room left over for the list.
+            // The release sits on the line under the art, with no gap.
             bool banner = w >= 84 && h >= 30;
-            if (banner)
-            {
-                y++;
-                foreach (var line in Banner) s.Put(2, y++, line, Ink.Cyan);
-            }
             y++;
+            if (banner)
+                foreach (var line in Banner) s.Put(2, y++, line, Ink.Cyan);
 
             // The release. The banner already says ComfyCraft, so the name
             // is added only in a window too small for the banner. What is
