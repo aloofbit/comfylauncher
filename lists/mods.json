@@ -250,7 +250,7 @@
     "sha256": "ab25a789098921d922001ee9f178c7274c547c20540fe4b0572af4312b474ce5"
   },
   {
-    "_why": "Our own three, added 2026-09-21 and re-pinned 2026-09-22 to that day's releases: comfygrass, comfyatmosphere (comfyfog.dll) and comfytime. comfygrass was re-pinned again on 2026-09-23 to v0.2.1-alpha, which makes rain show again, and comfyatmosphere the same day to v0.4.1-alpha, which adds its controls to Video > Shaders, removes the sun rays, and keeps the addon silent when the DLL is turned off. v0.4.0-alpha was pinned for one commit and never deployed; its addon printed a chat line at every login once the launcher had turned the DLL off. comfyatmosphere was re-pinned on 2026-09-24 to v0.5.0-alpha, which brings the sun rays back, adds a Volumetric Light Quality control, stops the light jittering while walking, and makes it cheaper. It was re-pinned on 2026-09-25 to v0.5.1-alpha, which makes the volumetric light work with anti-aliasing (multisampling) on. It was re-pinned the same day to v0.5.2-alpha, which keeps buildings and ground in the shadow map after the player has seen more than copyMax of them. Every pin is our own hash of a fresh download of the release asset, and each matched the sha256 digest GitHub publishes for it. A client that already carries one of them gets an unticked `update` row when its pin moves, found by file_sha256. They coordinate among themselves at start up (each waits for the others to finish patching the Direct3D device), so the order the launcher appends their dlls.txt lines in does not matter. All three are alpha and ask for a backup first.",
+    "_why": "Our own three, added 2026-09-21 and re-pinned 2026-09-22 to that day's releases: comfygrass, comfyatmosphere (comfyfog.dll) and comfytime. comfygrass was re-pinned again on 2026-09-23 to v0.2.1-alpha, which makes rain show again, and comfyatmosphere the same day to v0.4.1-alpha, which adds its controls to Video > Shaders, removes the sun rays, and keeps the addon silent when the DLL is turned off. v0.4.0-alpha was pinned for one commit and never deployed; its addon printed a chat line at every login once the launcher had turned the DLL off. comfyatmosphere was re-pinned on 2026-09-24 to v0.5.0-alpha, which brings the sun rays back, adds a Volumetric Light Quality control, stops the light jittering while walking, and makes it cheaper. It was re-pinned on 2026-09-25 to v0.5.1-alpha, which makes the volumetric light work with anti-aliasing (multisampling) on. It was re-pinned the same day to v0.5.2-alpha, which keeps buildings and ground in the shadow map after the player has seen more than copyMax of them. Then to v0.5.3-alpha, which halves the light's CPU cost, stops the light through trees jittering while walking, and frees depth stand-ins left behind by a window resize. Every pin is our own hash of a fresh download of the release asset, and each matched the sha256 digest GitHub publishes for it. A client that already carries one of them gets an unticked `update` row when its pin moves, found by file_sha256. They coordinate among themselves at start up (each waits for the others to finish patching the Direct3D device), so the order the launcher appends their dlls.txt lines in does not matter. All three are alpha and ask for a backup first.",
     "name": "Swaying grass",
     "file": "comfygrass.dll",
     "note": "grass sways in the wind and parts around you",
@@ -270,11 +270,11 @@
     "name": "Fog and light",
     "file": "comfyfog.dll",
     "note": "moodier fog, sun rays, and light through the trees",
-    "version": "v0.5.2-alpha",
+    "version": "v0.5.3-alpha",
     "from": "https://github.com/aloofbit/comfyatmosphere",
-    "url": "https://github.com/aloofbit/comfyatmosphere/releases/download/v0.5.2-alpha/comfyatmosphere-v0.5.2-alpha.zip",
-    "sha256": "1b680cfa94f8cc2cc673f99032ac9c9d7396e74168f693c387b53d525a31e547",
-    "file_sha256": "85a0ea6d9f5ebfbaf3284bf7004d38976c19f3fd1a6a84a9fa05a72f46f4c7bd",
+    "url": "https://github.com/aloofbit/comfyatmosphere/releases/download/v0.5.3-alpha/comfyatmosphere-v0.5.3-alpha.zip",
+    "sha256": "a3043d6dfcaa280eabaed9aa4d5b0e141630b76ad577bf33e8dc2ed737f96eb0",
+    "file_sha256": "39655d866fa7752d3b8044d4fca8d6ab50d80995742bc9f66267b2e3bd3c1b29",
     "_extract_comment": "The addon is the fog, light, sun ray and cloud controls in Video > Shaders. It reads CVars that the DLL registers, so it adds nothing when the DLL is not loaded. The ini comes along, and must: v0.5.0-alpha changed its defaults (shadow map size, samples, redraw rate, smoothing) and brought back the [rays] section, and an old ini's values override the new defaults, so a client that kept it would not get the lower cost.",
     "extract": {
       "comfyfog.dll": "comfyfog.dll",
