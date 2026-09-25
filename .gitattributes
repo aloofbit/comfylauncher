@@ -1,0 +1,3 @@
+# Keep every byte as it is. The release hash is checked by building these
+# files, so git must not change their line endings.
+* -text

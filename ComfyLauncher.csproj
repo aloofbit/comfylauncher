@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ComfyLauncher, in C#. It replaced ComfyLauncher.ps1 and the exe that
+    carried it; Build-Manifest.ps1 builds this and zips it.
+
+    net472 is a .NET Framework that Windows 10 has shipped since 1803, so a
+    player installs nothing. The .NET SDK is only needed here, to build it,
+    and it gives modern C# where the csc.exe in Windows stops at C# 5.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>ComfyLauncher</AssemblyName>
+    <RootNamespace>ComfyLauncher</RootNamespace>
+    <DebugType>none</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- aloofPeek.png, uncropped. Also the title bar icon. -->
+    <ApplicationIcon>ComfyLauncher.ico</ApplicationIcon>
+    <!-- THE RELEASE: drawn under the banner, compared with the manifest's
+         launcher.release for self update, and raised by Build-Manifest.ps1
+         when the sources change. 1.0 is the first C# release: every 0.x
+         launcher counts itself behind and updates to it. -->
+    <Version>1.13</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>ComfyCraft Launcher</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- JavaScriptSerializer, which ships with .NET Framework: no JSON package in the download. -->
+    <Reference Include="System.Web.Extensions" />
+    <!-- ZipArchive, for addons and mods: also part of .NET Framework. -->
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <!-- WMI, for the resolutions the monitor reports. -->
+    <Reference Include="System.Management" />
+  </ItemGroup>
+
+</Project>
