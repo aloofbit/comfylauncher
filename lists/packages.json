@@ -23,7 +23,7 @@
 
   "sections": [
     {
-      "_why": "comfylogin, our own, since 2026-09-25: saved accounts on the login screen, character order, and an auto login character (github.com/aloofbit/comfylogin). It replaced paokkerkir/vanilla-autologin 3.0.2, the owner's pick of 2026-09-24, whose look the owner did not like. It is a patch (W) and not a mod, so it lives here, but ours draws it under ComfyCraft. Optional because it needs Nampower. It loads only through the Include line at the end of patch-V's CharacterCreate.xml. A client that still has paokkerkir's patch-Y lists it under Also in this client, and comfylogin stays hidden until that row is unticked.",
+      "_why": "comfylogin, our own, since 2026-09-25: saved accounts on the login screen, character order, and an auto login character (github.com/aloofbit/comfylogin). It replaced paokkerkir/vanilla-autologin 3.0.2, the owner's pick of 2026-09-24, whose look the owner did not like. It is a patch (W) and not a mod, so it lives here, but ours draws it under ComfyCraft. Optional because it needs Nampower. It loads from its own copy of MovieFrame.xml, so it no longer needs patch-V. A client that still has paokkerkir's patch-Y lists it under Also in this client, and comfylogin stays hidden until that row is unticked.",
       "title": "Saved accounts",
       "pack": "ComfyCraft",
       "ours": true,
@@ -36,7 +36,7 @@
           "conflicts": ["patch:Y"],
           "advice": "Passwords are kept in Imports\\logins.txt, as plain text unless WOW_ENCRYPTION_KEY is set.",
           "parts": [
-            { "letter": "W", "size": 34448, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.1.0-alpha/patch-W.mpq", "sha256": "70592e47663aa3a15965197935adbfe15758a98a3a2d1aa733b260360ff2be3a" }
+            { "letter": "W", "size": 36464, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.1.1-alpha/patch-W.mpq", "sha256": "e280e7263b2e0f470f7e80840e7523fefd9cada4de3279e1446943b4fc764583" }
           ]
         }
       ]
