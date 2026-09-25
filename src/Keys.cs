@@ -206,8 +206,13 @@ namespace ComfyLauncher
                 var b = blockers[0];
                 var mine = new HashSet<char>(row.Writes);
                 foreach (var need in row.AllNeeds) mine.UnionWith(need.Writes);
-                char letter = b.Writes.First(mine.Contains);
-                app.Flash = b.Label + " already uses patch-" + letter + ". Untick it first to set it aside";
+                char letter = b.Writes.FirstOrDefault(mine.Contains);
+                if (letter != default(char))
+                    app.Flash = b.Label + " already uses patch-" + letter + ". Untick it first to set it aside";
+                else
+                    // Named in the conflicts, with no file in common. What to
+                    // do comes first, since a narrow window cuts the end.
+                    app.Flash = "Untick " + b.Label + " (patch-" + b.Writes.FirstOrDefault() + ") first: it cannot be on with " + row.Label;
                 return;
             }
 

@@ -434,18 +434,27 @@ namespace ComfyLauncher
         public static bool Clashes(Row a, Row b) =>
             SameFiles(a, b) || a.Conflicts.Contains(b.Id) || b.Conflicts.Contains(a.Id);
 
-        // Every package that clashes with this one, for the detail line.
+        // A package may name one of the player's own rows in its conflicts,
+        // by id: "patch:Y". That is a patch that breaks it without sharing a
+        // file. comfylogin names patch-Y, the auto login it replaced
+        // (2026-09-25), since it stays hidden while another one is loaded.
+        public static bool Named(Row a, Row b) => a.Conflicts.Contains(b.Id) || b.Conflicts.Contains(a.Id);
+
+        // Every package that clashes with this one, for the detail line, and
+        // any row of the player's that it names.
         public IEnumerable<Row> ClashesWith(Row row) =>
-            Rows.Where(r => r != row && r.Kind == RowKind.Check && !r.Unknown && Clashes(r, row));
+            Rows.Where(r => r != row && r.Kind == RowKind.Check && (!r.Unknown || Named(r, row)) && Clashes(r, row));
 
         // The player's own files that a row, or anything it needs, would
-        // overwrite. Ticking such a row is refused rather than setting the
-        // player's file aside behind their back.
+        // overwrite, or that it names as a conflict. Ticking such a row is
+        // refused rather than setting the player's file aside behind their
+        // back: the owner's call for the named ones, 2026-09-25.
         public List<Row> Blockers(Row row)
         {
             var writes = new HashSet<char>(row.Writes);
             foreach (var need in row.AllNeeds) writes.UnionWith(need.Writes);
-            return Rows.Where(r => r.Unknown && r.On && r.Writes.Overlaps(writes)).ToList();
+            return Rows.Where(r => r.Unknown && r.On &&
+                                   (r.Writes.Overlaps(writes) || Named(r, row) || row.AllNeeds.Any(n => Named(r, n)))).ToList();
         }
 
         // Ticking a row ticks what it needs, all the way down, brings back

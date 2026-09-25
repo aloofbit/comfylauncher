@@ -1,6 +1,6 @@
 {
   "_comment": "Packages the C# launcher offers beyond manifest items and mods.json: the HD packs. A package is one row; its parts are the files it writes. Sizes are exact bytes, measured 2026-09-24: Reforged by HEAD on their R2 host, Faithful from its zip's own directory. A file on disk is matched to a package BY SIZE, which is how a patch-A from Reforged is told from one from Faithful or anybody else.",
-  "_comment2": "needs: ids of packages or mods (mod:<file>) that must be on. parent: drawn indented under that package and needs it. conflicts: package ids that cannot be on with this one although they write different files. choices: variants of one package; Space steps through them.",
+  "_comment2": "needs: ids of packages or mods (mod:<file>) that must be on. parent: drawn indented under that package and needs it. conflicts: package ids that cannot be on with this one although they write different files, or patch:<letter> for a patch of the player's own, which must be unticked first. choices: variants of one package; Space steps through them.",
   "_comment3": "Faithful parts carry zip: the Drive zip STORES its patches, and Drive answers range requests, so one patch is fetched as the byte range [offset, offset + size) of the zip. crc32 is the zip's own check for that range.",
 
   "_comment4": "sha256 on a part is checked after the download. ours: the section's rows are drawn under ComfyCraft, with no heading of their own.",
@@ -33,6 +33,7 @@
           "name": "Saved accounts",
           "note": "your accounts on the login screen, with auto login",
           "needs": ["mod:nampower.dll"],
+          "conflicts": ["patch:Y"],
           "advice": "Passwords are kept in Imports\\logins.txt, as plain text unless WOW_ENCRYPTION_KEY is set.",
           "parts": [
             { "letter": "W", "size": 34448, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.1.0-alpha/patch-W.mpq", "sha256": "70592e47663aa3a15965197935adbfe15758a98a3a2d1aa733b260360ff2be3a" }
