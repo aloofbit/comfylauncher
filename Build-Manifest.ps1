@@ -218,6 +218,10 @@ if (Test-Path -LiteralPath $Out) { Remove-Item -LiteralPath $Out -Recurse -Force
 $files = Join-Path $Out 'files'
 New-Item -ItemType Directory -Path $files -Force | Out-Null
 
+# BOTH, by name. ZipArchiveMode is in System.IO.Compression, which .NET loads
+# only when the first addon is zipped, so a build with no addon folder died at
+# the drop-in zip with "Unable to find type" (measured 2026-09-25).
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 # ArrayList rather than List[object], and that is not a style choice.
