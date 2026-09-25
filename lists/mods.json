@@ -1,0 +1,299 @@
+[
+  {
+    "_comment": "Client mods the launcher can turn on and off, and what to call them.",
+    "_comment2": "A mod is toggleable exactly when VanillaFixes injects it from the client's own dlls.txt, so the file name here has to match a line in there. Anything in a client's dlls.txt that is NOT listed here still appears in the launcher, named after its file: a client may carry a mod we have never heard of, and hiding it would leave no way to turn it off.",
+    "_comment3": "The notes are hand written and are what a player reads, so keep them short and free of dashes. Correct one rather than leaving it vague.",
+    "_comment4": "dxvk does NOT belong here. It loads by sitting beside WoW.exe as d3d9.dll and friends, not from dlls.txt, and Turtle ships the d3d9 one itself. Its row is `dxvk` in packages.json. See docs/notes/launcher-client-toggles.md.",
+
+    "_comment5": "url/sha256/version are how a mod the client does NOT have gets fetched. The url is always the upstream project's own release asset: nothing here is rehosted, and `from` is the project it belongs to. Five of the six are in a stock Turtle client already, so in practice this fetches Interact and repairs a deleted file, and never upgrades anything.",
+    "_comment6": "EVERY sha256 WAS MEASURED AGAINST THE FILE ALREADY IN THE CLIENT, on 2026-09-20: each pinned asset is byte identical to what octow and clean-turtle carry. That is the whole reason these pins are safe. Re-measure before moving one to a newer version, and say what changed.",
+    "_comment6b": "Lexara and ClassicAPI (added 2026-09-21) are the exception: no client here has either, so there was nothing to compare against. Their pins are our own hash of the downloaded asset, which matched the digest GitHub publishes for it. Both were releasing more than once a day when pinned, and the launcher never upgrades a file that is already there, so a newer pin reaches only clients that do not have the mod yet.",
+    "_comment7": "No `extract` means the download IS the file and is written to `file`. With `extract` the download is a zip and each key is an entry in it: a key ending in / takes that whole subtree, anything else is one file. The value is where it goes, relative to the client.",
+    "_comment8": "A bundled addon is a decision, not a default. Turtle injects UnitXP_SP3.dll WITHOUT UnitXP_SP3_Addon, so taking that subtree would add something a stock client does not have. Interact is the other way: its addon carries Bindings.xml, so without it there is no key to press.",
+    "_comment10": "variant: true is another build of a file an earlier entry already names, and it gets a row of its own that says which build is on disk. file_sha256 is the hash of that file AS IT LANDS, which is how the launcher tells the two builds apart, since the name is the same. Unticking a variant puts the plain entry's build back and deletes the variant's other files, so the plain entry must carry a url. It never touches dlls.txt: the plain entry's row stays the on/off switch for the line, whichever build it loads. Anything else the zip holds is left out by naming only what we want, which matters for VanillaHelpers64, whose TexBridgeFullLog.txt switches on verbose logging just by existing.",
+    "_comment12": "also lists more downloads that come with a mod, each with url, sha256 and extract: an addon kept in a repo of its own. A mod whose DLL is on the disk and whose addon or ini is not reads reinstall.",
+    "_comment11": "section names the heading the C# launcher draws the row under, after Game fixes. Absent means Game fixes. A mod from github.com/aloofbit goes under ComfyCraft whatever it says.",
+    "_comment9":"inject: false means the file is fetched but never written into dlls.txt. VanillaFixes is the only one: it IS the injector, so a checkbox for it would be a switch for the thing that reads the switches. IchaLaunch draws the same line, by leaving the dlls_txt key off that one entry. Such a row is offered only on a client that does not have it, because once it does there is nothing to toggle."
+  },
+
+  {
+    "name": "VanillaFixes",
+    "file": "VanillaFixes.exe",
+    "note": "starts the game and loads the mods below",
+    "inject": false,
+    "version": "v1.5.3",
+    "from": "https://github.com/hannesmann/vanillafixes",
+    "url": "https://github.com/hannesmann/vanillafixes/releases/download/v1.5.3/vanillafixes-1.5.3.zip",
+    "sha256": "72ea02aa34b61675d6f9ffc99fc64bc3d0c3e68e139f3f885eb04cac5167bc07",
+    "_extract_comment": "The zip has a third entry, dlls.txt, and taking it would overwrite the list of what this client already injects. Naming the two files we want is what keeps it out.",
+    "extract": {
+      "VanillaFixes.exe": "VanillaFixes.exe",
+      "VfPatcher.dll": "VfPatcher.dll"
+    }
+  },
+
+  {
+    "name": "Nampower",
+    "file": "nampower.dll",
+    "note": "spells cast the moment you press the key",
+    "version": "v4.6.2",
+    "from": "https://github.com/Emyrk/nampower",
+    "url": "https://github.com/Emyrk/nampower/releases/download/v4.6.2/nampower.dll",
+    "sha256": "b869f3a3b37114dbf12b299da05f913e25e9274fc903b7b3e62ab81ae0fb1bec"
+  },
+  {
+    "name": "UnitXP SP3",
+    "file": "UnitXP_SP3.dll",
+    "note": "Turtle's client extension, including camera and nameplate distance",
+    "version": "v89",
+    "from": "https://codeberg.org/konaka/UnitXP_SP3",
+    "url": "https://codeberg.org/konaka/UnitXP_SP3/releases/download/v89/UnitXP_SP3%20v89.zip",
+    "sha256": "43c5cbf10c1dd9f46210637f60f052fdbb53bc156631f31e10dc6ab285a8c34e",
+    "extract": {
+      "UnitXP_SP3.dll": "UnitXP_SP3.dll"
+    }
+  },
+  {
+    "name": "Interact",
+    "file": "Interact.dll",
+    "note": "a key that talks to whoever you are facing",
+    "version": "v1.0.4",
+    "from": "https://github.com/lookino/Interact",
+    "url": "https://github.com/lookino/Interact/releases/download/v1.0.4/Interact.zip",
+    "sha256": "f7104564f324f6a5486e80cb2c5133a6ebb462eed7877c2ad3429e88afb4ed37",
+    "extract": {
+      "Interact.dll": "Interact.dll",
+      "Interface/AddOns/Interact/": "Interface/AddOns/Interact/"
+    }
+  },
+  {
+    "name": "Transmog",
+    "section": "WeirdUtils",
+    "file": "transmogfix.dll",
+    "note": "other players' transmogrified gear shows correctly",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/transmogfix.dll",
+    "sha256": "cd9e4c6ce033b0923cf045269f590f5e0b886bd03f43bd81406670d781452210"
+  },
+  {
+    "name": "Multi monitor",
+    "file": "VanillaMultiMonitorFix.dll",
+    "note": "fullscreen stays on the monitor you picked",
+    "version": "0.2",
+    "from": "https://github.com/Mates1500/VanillaMultiMonitorFix",
+    "url": "https://github.com/Mates1500/VanillaMultiMonitorFix/releases/download/0.2/release.zip",
+    "sha256": "79bbab031689292379c221fe8d570e45995d09ab30e58519dec91030c9d19046",
+    "extract": {
+      "VanillaMultiMonitorFix.dll": "VanillaMultiMonitorFix.dll"
+    }
+  },
+  {
+    "name": "Vanilla helpers",
+    "file": "VanillaHelpers.dll",
+    "note": "part of VanillaFixes. Leave this on",
+    "version": "v1.1.2",
+    "from": "https://github.com/isfir/VanillaHelpers",
+    "url": "https://github.com/isfir/VanillaHelpers/releases/download/v1.1.2/VanillaHelpers.dll",
+    "sha256": "1e74ddf6484c23482550d5f9e5f9d291085c4ac538d3b3ed9d87155521841196"
+  },
+  {
+    "_why": "Fixes crashes with HD textures for the owner. Pinned 2026-09-21: the zip matched GitHub's digest, and both files in it are byte identical to the copies already in octow. Labelled beta upstream.",
+    "name": "Vanilla helpers 64",
+    "choice": "64 bit",
+    "file": "VanillaHelpers.dll",
+    "note": "a 64 bit build that crashes less with HD textures",
+    "variant": true,
+    "file_sha256": "5916a1725ef2c9e9cf6522854590bdc58cff8a82b775bf266834ee6ee683165b",
+    "version": "v.1.1.1",
+    "from": "https://github.com/paokkerkir/VanillaHelpers64",
+    "url": "https://github.com/paokkerkir/VanillaHelpers64/releases/download/v.1.1.1/Vanillahelpers64.zip",
+    "sha256": "83b8bd72d014d7e9ed7dc3ef7060b2cb6be3cea5b15331f827959314c061f86a",
+    "extract": {
+      "VanillaHelpers.dll": "VanillaHelpers.dll",
+      "TextureServer64.exe": "TextureServer64.exe"
+    }
+  },
+  {
+    "name": "HD fonts",
+    "file": "lexara112.dll",
+    "note": "sharp text at any size",
+    "version": "1.0.8",
+    "from": "https://github.com/xnobus/lexara112",
+    "url": "https://github.com/xnobus/lexara112/releases/download/1.0.8/lexara112.dll",
+    "sha256": "69df4a72e74d8afe6996ea43dbb22589883e18faaf9806296f6451db8a1fc723"
+  },
+  {
+    "name": "ClassicAPI",
+    "file": "ClassicAPI.dll",
+    "note": "lets addons written for later versions of the game run",
+    "version": "v1.15.12",
+    "from": "https://github.com/brues-code/ClassicAPI",
+    "url": "https://github.com/brues-code/ClassicAPI/releases/download/v1.15.12/ClassicAPI.dll",
+    "sha256": "a2034799f5c03bb5e2ec9a0721a31b2dd024e7cd90bd9c56248383a948495677"
+  },
+  {
+    "_why": "Added 2026-09-24. VanillaFixes loads SuperWoWhook.dll from dlls.txt (pepopo978/SuperwowInstallation, step 7B), so SuperWoWlauncher.exe is not needed and not taken. octow's copy is byte identical to this zip's. The sha256 matched the digest GitHub publishes. THE TAG `Release` IS REUSED: the author replaces the zip under it (this one holds files dated 2026-07-16 in a release from 2025-02-01), so a new upload fails the hash check and the install stops without changing anything. Re-pin then. The licence is personal use only and forbids distribution; the launcher fetches the author's own release and hosts nothing. The companion addon SuperAPI (the default UI's compatibility, and a minimap menu for SuperWoW's settings) has no releases, so `also` fetches GitHub's archive of one commit; two downloads of it hashed the same.",
+    "name": "SuperWoW",
+    "file": "SuperWoWhook.dll",
+    "note": "more for addons to use, and fixes to the client",
+    "version": "2.2",
+    "from": "https://github.com/balakethelock/SuperWoW",
+    "url": "https://github.com/balakethelock/SuperWoW/releases/download/Release/SuperWoW.release.2.2.zip",
+    "sha256": "e1b37caf5496037fc369b8b68b5ef529be5fa951543869328bf38bef83dfa4a8",
+    "extract": {
+      "SuperWoWhook.dll": "SuperWoWhook.dll"
+    },
+    "also": [
+      {
+        "url": "https://github.com/balakethelock/SuperAPI/archive/901322dc88890a2ea10610b8228fb43c9c2a3610.zip",
+        "sha256": "9a719a1cf57a8de32b336b14c27ab165f741083ff1e833fa76034e882df94377",
+        "extract": {
+          "SuperAPI-901322dc88890a2ea10610b8228fb43c9c2a3610/": "Interface/AddOns/SuperAPI/"
+        },
+        "_off_with_mod": "SuperAPI shows a No SuperWoW detected popup at every login without the DLL, so switching SuperWoW off moves it aside, and switching it on moves it back.",
+        "off_with_mod": true
+      }
+    ]
+  },
+
+  {
+    "_why": "WeirdUtils, added 2026-09-24 from the OctoWoW Modernization Tool's list (docs/notes/wow-modernization-tool.md). Each DLL is standalone and carries its own addon, so each is one file. The repo was archived on 2026-08-02 and publishes no source, so v0.7.0 (v0.7.1 for World markers) is final. Every sha256 is our own hash of the release asset; Codeberg publishes none to compare with. The bundle weirdutils.dll is left out: it holds the same modules, and loading it beside any of these hooks one function twice. Its four bundle only modules (framecrash, outline, interact, dpslog) are left out with it.",
+    "name": "Performance",
+    "section": "WeirdUtils",
+    "file": "weirdperformance.dll",
+    "note": "faster math, loading and Lua, and fewer stutters",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/weirdperformance.dll",
+    "sha256": "ab9cf654ba18cca7ae2197864a7fc773f03ca1e31069b6d7b1eed9639e796f37"
+  },
+  {
+    "name": "PNG screenshots",
+    "section": "WeirdUtils",
+    "file": "pngscreenshots.dll",
+    "note": "screenshots saved as PNG, not TGA",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/pngscreenshots.dll",
+    "sha256": "44ca42ac8428eb4e69017ad264b8e86206e803ccbe3a3591d6ba1916d7888dca"
+  },
+  {
+    "name": "Minimap tracking",
+    "section": "WeirdUtils",
+    "file": "minimapicons.dll",
+    "note": "vendors, trainers and quest givers on the minimap",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/minimapicons.dll",
+    "sha256": "a6821e088d0f8ffa7806e88e1b8686f4ec715a218f74f62d6f33bd9bcf91583e"
+  },
+  {
+    "name": "World markers",
+    "section": "WeirdUtils",
+    "file": "worldmarkers.dll",
+    "note": "raid markers placed on the ground",
+    "version": "v0.7.1",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.1/worldmarkers.dll",
+    "sha256": "7b0b0fcdb8bb9e82c5a18ab395af670f57da3e03035b27d5e244e4f8b457fdf2"
+  },
+  {
+    "name": "Smart click",
+    "section": "WeirdUtils",
+    "file": "clickthrough.dll",
+    "note": "a click picks the useful target under the cursor",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/clickthrough.dll",
+    "sha256": "163b409ecd9e7e6e08f6c8645443def5aa73e64000d3b4632ffb5dd561347fa7"
+  },
+  {
+    "name": "Big cursor",
+    "section": "WeirdUtils",
+    "file": "bigcursor.dll",
+    "note": "a larger mouse cursor",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/bigcursor.dll",
+    "sha256": "daa85d8e29e5458fd9962f922ba1e2a65ff2ac6cddff1242a2d6240c287a22d8"
+  },
+  {
+    "name": "Log sessions",
+    "section": "WeirdUtils",
+    "file": "logsessions.dll",
+    "note": "chat and combat logs by character and day",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/logsessions.dll",
+    "sha256": "f5f37e449dc4646b6d2de8c01e57b954ab2fb7950bef372ddba2c744fb7b9841"
+  },
+  {
+    "_why": "It also sorts patch archives by name and allows longer names. Every patch the launcher knows is patch-<one letter>, which sorts the same either way.",
+    "name": "Loose files",
+    "section": "WeirdUtils",
+    "file": "customassets.dll",
+    "note": "the game reads loose model and texture files in Data",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/customassets.dll",
+    "sha256": "86f3a24cfbaa8d775bdab280d63fbf48b445d8789c2759fe912183462f36f06f"
+  },
+  {
+    "name": "Heal text fix",
+    "section": "WeirdUtils",
+    "file": "healtextfix.dll",
+    "note": "for SuperWoW only: one heal number, not two",
+    "version": "v0.7.0",
+    "from": "https://codeberg.org/MarcelineVQ/WeirdUtils",
+    "url": "https://codeberg.org/MarcelineVQ/WeirdUtils/releases/download/v0.7.0/healtextfix.dll",
+    "sha256": "ab25a789098921d922001ee9f178c7274c547c20540fe4b0572af4312b474ce5"
+  },
+  {
+    "_why": "Our own three, added 2026-09-21 and re-pinned 2026-09-22 to that day's releases: comfygrass, comfyatmosphere (comfyfog.dll) and comfytime. comfygrass was re-pinned again on 2026-09-23 to v0.2.1-alpha, which makes rain show again, and comfyatmosphere the same day to v0.4.1-alpha, which adds its controls to Video > Shaders, removes the sun rays, and keeps the addon silent when the DLL is turned off. v0.4.0-alpha was pinned for one commit and never deployed; its addon printed a chat line at every login once the launcher had turned the DLL off. comfyatmosphere was re-pinned on 2026-09-24 to v0.5.0-alpha, which brings the sun rays back, adds a Volumetric Light Quality control, stops the light jittering while walking, and makes it cheaper. Every pin is our own hash of a fresh download of the release asset, and each matched the sha256 digest GitHub publishes for it. A client that already carries one of them gets an unticked `update` row when its pin moves, found by file_sha256. They coordinate among themselves at start up (each waits for the others to finish patching the Direct3D device), so the order the launcher appends their dlls.txt lines in does not matter. All three are alpha and ask for a backup first.",
+    "name": "Swaying grass",
+    "file": "comfygrass.dll",
+    "note": "grass sways in the wind and parts around you",
+    "version": "v0.2.1-alpha",
+    "from": "https://github.com/aloofbit/comfygrass",
+    "url": "https://github.com/aloofbit/comfygrass/releases/download/v0.2.1-alpha/comfygrass-v0.2.1-alpha.zip",
+    "sha256": "12ff95385c178f49c71d9e8d20047291a36a350f2864355013ad2899f68f343c",
+    "file_sha256": "8cefe37b1545f55c95b1e241b505726cd406080337ba2bc6a7d75dc20304a1ef",
+    "_extract_comment": "The addon is the Foliage Density slider in the video options. Optional and harmless, and it works with or without the DLL, so it comes along.",
+    "extract": {
+      "comfygrass.dll": "comfygrass.dll",
+      "comfygrass.ini": "comfygrass.ini",
+      "Interface/AddOns/ComfyGrass/": "Interface/AddOns/ComfyGrass/"
+    }
+  },
+  {
+    "name": "Fog and light",
+    "file": "comfyfog.dll",
+    "note": "moodier fog, sun rays, and light through the trees",
+    "version": "v0.5.0-alpha",
+    "from": "https://github.com/aloofbit/comfyatmosphere",
+    "url": "https://github.com/aloofbit/comfyatmosphere/releases/download/v0.5.0-alpha/comfyatmosphere-v0.5.0-alpha.zip",
+    "sha256": "fc49bb92863feb3b5be95ba9254d7465d6556ccba9ac5b38e0d0df21d233dcef",
+    "file_sha256": "80f89c7a3574007fca262419395167b827384b92cc4fa0075baf110c5ff13ef6",
+    "_extract_comment": "The addon is the fog, light, sun ray and cloud controls in Video > Shaders. It reads CVars that the DLL registers, so it adds nothing when the DLL is not loaded. The ini comes along, and must: v0.5.0-alpha changed its defaults (shadow map size, samples, redraw rate, smoothing) and brought back the [rays] section, and an old ini's values override the new defaults, so a client that kept it would not get the lower cost.",
+    "extract": {
+      "comfyfog.dll": "comfyfog.dll",
+      "comfyfog.ini": "comfyfog.ini",
+      "Interface/AddOns/ComfyAtmosphere/": "Interface/AddOns/ComfyAtmosphere/"
+    }
+  },
+  {
+    "name": "Time of day",
+    "file": "comfytime.dll",
+    "note": "choose the time of day, on your screen only",
+    "version": "v0.2.0-alpha",
+    "from": "https://github.com/aloofbit/comfytime",
+    "url": "https://github.com/aloofbit/comfytime/releases/download/v0.2.0-alpha/comfytime-v0.2.0-alpha.zip",
+    "sha256": "b8319cfbe12db653ee46f4d29c77a735470ee6b99720b47013e0372b600ae243",
+    "file_sha256": "401abc65442c7040850c0a5e346ef054eea65286c6c09be4cc80c3e15d455f3c",
+    "extract": {
+      "comfytime.dll": "comfytime.dll",
+      "comfytime.ini": "comfytime.ini"
+    }
+  }
+]

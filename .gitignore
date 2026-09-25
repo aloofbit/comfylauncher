@@ -1,2 +1,20 @@
+# What a build writes.
 bin/
 obj/
+dist/
+ComfyLauncher.exe
+ComfyLauncher.exe.old
+
+# Patches waiting to be packed. They are big, and patch-V.mpq is rebuilt from
+# the client by comfy-wow's tools/model-browser/build-patch-v.js. The README
+# and each patch's sidecar .txt are small and tracked.
+patches/*
+!patches/README.txt
+!patches/*.mpq.txt
+
+# This machine's own files: a test run's state, and the path to the client the
+# manifest is measured against.
+comfylauncher.json
+reference-client.txt
+# What a test run of the exe here sets aside, when it runs without --home.
+set-aside/

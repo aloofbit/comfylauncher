@@ -1,0 +1,21 @@
+# Realms every copy of ComfyLauncher knows.  Name | realmlist | patchlist
+#
+# OURS ONLY, AND NO IP ADDRESSES. This file is packed into the manifest and
+# served to anybody who downloads the launcher, so a bare IP in here publishes
+# whatever machine it belongs to. The dev entry pointed at a home connection
+# until 2026-09-17, which is exactly the mistake this comment exists to stop
+# happening again.
+#
+# dev.comfycraft resolves only where the Windows hosts file has been given the
+# line for it, which is the point: the people who use the dev realm are the
+# people who set that up, and everybody else gets a name that goes nowhere
+# rather than an address that goes somewhere private.
+#
+# Realms a player adds themselves live in their own comfylauncher.json and are
+# never sent anywhere.
+#
+# The patchlist is optional and copies the realmlist when left out.
+
+ComfyCraft       | comfycraft.dedyn.io
+ComfyCraft dev   | dev.comfycraft
+Localhost        | 127.0.0.1

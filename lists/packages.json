@@ -1,0 +1,167 @@
+{
+  "_comment": "Packages the C# launcher offers beyond manifest items and mods.json: the HD packs. A package is one row; its parts are the files it writes. Sizes are exact bytes, measured 2026-09-24: Reforged by HEAD on their R2 host, Faithful from its zip's own directory. A file on disk is matched to a package BY SIZE, which is how a patch-A from Reforged is told from one from Faithful or anybody else.",
+  "_comment2": "needs: ids of packages or mods (mod:<file>) that must be on. parent: drawn indented under that package and needs it. conflicts: package ids that cannot be on with this one although they write different files. choices: variants of one package; Space steps through them.",
+  "_comment3": "Faithful parts carry zip: the Drive zip STORES its patches, and Drive answers range requests, so one patch is fetched as the byte range [offset, offset + size) of the zip. crc32 is the zip's own check for that range.",
+
+  "_comment4": "sha256 on a part is checked after the download. The login screen's patch is pinned to a commit, since the repo has no releases.",
+
+  "dxvk": {
+    "_why": "Added 2026-09-24 for Project Reforged, whose Turtle page asks for DXVK 2.7.1, or 2.5.3 as a fallback: the x32 d3d9.dll beside WoW.exe. It is not a mod in mods.json because it is not a line in dlls.txt; the game loads it by sitting beside the exe. One row, one choice per build. A build is recognised BY THE sha256 OF d3d9.dll, measured 2026-09-24: Turtle ships its own 2.7.1 build (a2cd68..., 4501518 bytes, in octow, clean-turtle and fresh-test), which is not stock 2.7.1 (00ecd4..., in octow - Copy and ravencraft). twow-hd has stock 2.5.3. A build with no url cannot be fetched and is offered only while its file is on the disk or set aside. A file no build knows is offered as the player's own. Switching sets the old file aside, never deletes it. The tarball sha256 came from a curl download and matched three downloads by the launcher; the release pages publish none.",
+    "file": "d3d9.dll",
+    "note": "draws the game through Vulkan",
+    "advice": "Project Reforged asks for 2.7.1, or 2.5.3 as a fallback.",
+    "builds": [
+      { "name": "Turtle's", "note": "2.7.1, as Turtle ships it", "sha256": "a2cd6841e102f37189527c118ec416fa5071ac4d3120762973d9a0c6c5fd067e" },
+      { "name": "2.7.1", "sha256": "00ecd422b3b12e9d3b309785f3f19431405389d80eb4a37018ebc63e2d87d900",
+        "url": "https://github.com/doitsujin/dxvk/releases/download/v2.7.1/dxvk-2.7.1.tar.gz", "size": 10310666,
+        "archive_sha256": "d85ce7c79f57ecd765aaa1b9e7007cb875e6fde9f6d331df799bce73d513ce87", "extract": "dxvk-2.7.1/x32/d3d9.dll" },
+      { "name": "2.5.3", "sha256": "3d6b529dc4f7f55639aad580e81b2939ab1489cdbb9f1550dce74e41656bbf5b",
+        "url": "https://github.com/doitsujin/dxvk/releases/download/v2.5.3/dxvk-2.5.3.tar.gz", "size": 9881540,
+        "archive_sha256": "d8e6ef7d1168095165e1f8a98c7d5a4485b080467bb573d2a9ef3e3d79ea1eb8", "extract": "dxvk-2.5.3/x32/d3d9.dll" }
+    ]
+  },
+
+  "sections": [
+    {
+      "_why": "paokkerkir/vanilla-autologin 3.0.2, tried on octow and kept by the owner on 2026-09-24. It adds its own GlueXML files and does not replace AccountLogin or CharacterSelect, so patch-V's changes to those screens still apply. Its GlueXML.toc drops OctoWoW's six locale files (login screen text for deDE, esES, ptBR, ruRU and zhCN, and the ruRU/zhCN font), so those login screens show English. It reads and writes Imports\\logins.txt through Nampower. The repo has no license; the launcher fetches the file from the author's repo and hosts nothing.",
+      "title": "Login screen",
+      "pack": "Login",
+      "links": [
+        { "name": "Their page", "note": "github.com/paokkerkir/vanilla-autologin", "url": "https://github.com/paokkerkir/vanilla-autologin" }
+      ],
+      "packages": [
+        {
+          "id": "autologin",
+          "name": "Saved accounts",
+          "note": "log in with one click, and order your characters",
+          "needs": ["mod:nampower.dll"],
+          "advice": "Passwords are kept in Imports\\logins.txt, as plain text unless WOW_ENCRYPTION_KEY is set.",
+          "parts": [
+            { "letter": "Y", "size": 12822, "url": "https://raw.githubusercontent.com/paokkerkir/vanilla-autologin/2665aeb14d9eaaa51f1532c7dc689c6a18b49a73/patch-Y.MPQ", "sha256": "fe7be1b6790b789b1bd47985590ca3062434c33da7d2e7f56a8fba996c7b3e0c" }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "HD packs from Project Reforged",
+      "pack": "Reforged",
+      "links": [
+        { "name": "Their website", "note": "projectreforged.github.io", "url": "https://projectreforged.github.io/vanilla/downloads/turtle/" },
+        { "name": "Their Discord", "note": "discord.gg/qDUtsW2Dm", "url": "https://discord.gg/qDUtsW2Dm" }
+      ],
+      "packages": [
+        {
+          "id": "reforged-characters",
+          "name": "Characters and gear",
+          "note": "characters, NPCs, creatures, weapons and armour",
+          "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [
+            { "letter": "A", "size": 1748152913, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-A.mpq", "etag": "68893aa3d69605370ddf4a46f1836b96-167" },
+            { "letter": "C", "size": 2083036611, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-C.mpq", "etag": "47a3a30ea2bea10b44a488b6746ad821-199" },
+            { "letter": "G", "size": 774538222,  "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-G.mpq", "etag": "8e9d67cd7e02d8e48166331b76d6d71e-74" }
+          ]
+        },
+        {
+          "id": "reforged-extra",
+          "parent": "reforged-characters",
+          "name": "A little extra",
+          "note": "for female characters",
+          "choices": [
+            { "name": "regular", "by": "Watchers3D", "parts": [
+              { "letter": "L", "size": 37330631, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-L.mpq", "etag": "0dddd92f7c9d1566d949ecca3650c451" } ] },
+            { "name": "less thicc", "by": "Deezhugs", "parts": [
+              { "letter": "L", "size": 53272447, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/extras/patch-L.mpq", "etag": "aafd9c51f825978bb74c6712c11cf8ff" } ] }
+          ]
+        },
+        {
+          "id": "reforged-hd-textures",
+          "parent": "reforged-characters",
+          "name": "HD textures",
+          "note": "sharper characters and gear",
+          "choices": [
+            { "name": "standard", "parts": [
+              { "letter": "T", "size": 541957195, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/extras/patch-T.mpq", "etag": "5384ef04052958ef7da915be9c271043-52" } ] },
+            { "name": "ultra", "parts": [
+              { "letter": "T", "size": 499342621, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-T.mpq", "etag": "73d9540b2feb0b98b1b7458d53b3d5c8-48" },
+              { "letter": "U", "size": 1662548731, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-U.mpq", "etag": "dd4f011c8bd8b05130d4d83db1f26730-159" } ] }
+          ]
+        },
+        {
+          "id": "reforged-world",
+          "name": "World",
+          "note": "buildings, doodads and the environment",
+          "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [
+            { "letter": "B", "size": 1608961816, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-B.mpq", "etag": "3013d1841d82803878b28b2c30a5a0d3-154" },
+            { "letter": "D", "size": 1648472586, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-D.mpq", "etag": "d25873e32fafc8c4a8889f3c4f3dcc58-158" },
+            { "letter": "E", "size": 719685533,  "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-E.mpq", "etag": "3321b2d8f1564772afc50366d1b63c1a-69" }
+          ]
+        },
+        { "id": "reforged-interface", "name": "Interface", "note": "buttons, icons and minimap art", "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [ { "letter": "I", "size": 162091469, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-I.mpq", "etag": "d6c3e566db817f196f8a33e2436d81ae-16" } ] },
+        { "id": "reforged-maps", "name": "Maps and loading screens", "note": "", "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [ { "letter": "M", "size": 438564005, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-M.mpq", "etag": "e0bc997d3d8ba76816df7f9070898c35-42" } ] },
+        { "id": "reforged-nights", "name": "Darker nights", "note": "", "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [ { "letter": "N", "size": 201362, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-N.mpq", "etag": "2351937a71949f4bc7636f4fa810ebeb" } ] },
+        { "id": "reforged-spells", "name": "Spell effects", "note": "", "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [ { "letter": "P", "size": 7272085, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-P.mpq", "etag": "4992cf0e8404333db2ebf41550d2e57c" } ] },
+        { "id": "reforged-sounds", "name": "Sounds and music", "note": "", "needs": ["mod:VanillaHelpers.dll"],
+          "parts": [ { "letter": "S", "size": 262721653, "url": "https://pub-0f05631d243e4046993fc02ca7be9542.r2.dev/patches/patch-S.mpq", "etag": "d3ea48cc03ddec087e551b838766ffe3-26" } ] }
+      ]
+    },
+    {
+      "title": "HD packs from Faithful Upscale",
+      "pack": "Faithful",
+      "_zip": "https://drive.usercontent.google.com/download?id=150iAzKo70RjKlxyn8sA0-VTRypr7TCH7&export=download&confirm=t",
+      "links": [],
+      "packages": [
+        {
+          "id": "faithful-world",
+          "name": "World textures",
+          "note": "the whole world, upscaled",
+          "needs": ["mod:VanillaHelpers.dll"],
+          "advice": "DXVK is recommended.",
+          "parts": [
+            { "letter": "B", "size": 1369630452, "zip": 105,         "crc32": "0bab8241" },
+            { "letter": "C", "size": 1645472077, "zip": 1369630615,  "crc32": "bbf2ffa5" },
+            { "letter": "D", "size": 1649793615, "zip": 3015102750,  "crc32": "5eb5fc59" },
+            { "letter": "E", "size": 1647921519, "zip": 4664896423,  "crc32": "5a1246f4" },
+            { "letter": "F", "size": 1921674992, "zip": 6312818000,  "crc32": "d00d2a76" },
+            { "letter": "G", "size": 1405965300, "zip": 8234493050,  "crc32": "0af89280" },
+            { "letter": "H", "size": 1853241431, "zip": 9640458408,  "crc32": "1ecdc5b1" }
+          ]
+        },
+        {
+          "id": "faithful-characters",
+          "name": "Characters and gear",
+          "note": "characters, weapons and armour, upscaled",
+          "needs": ["mod:VanillaHelpers.dll"],
+          "conflicts": ["reforged-hd-textures"],
+          "advice": "Try 2x if the game runs out of memory in cities.",
+          "choices": [
+            { "name": "4x", "parts": [
+              { "letter": "O", "size": 1684764576, "zip": 11937431471, "crc32": "549dd039" },
+              { "letter": "P", "size": 527082926,  "zip": 13622196105, "crc32": "74e2e3d3" } ] },
+            { "name": "2x", "parts": [
+              { "letter": "O", "size": 384954914,  "zip": 14176662572, "crc32": "c5115809" },
+              { "letter": "P", "size": 149640852,  "zip": 14561617556, "crc32": "6beea2c4" } ] }
+          ]
+        },
+        {
+          "id": "faithful-newer-gear",
+          "parent": "faithful-characters",
+          "name": "1.18.1 content",
+          "note": "Turtle's newer gear, upscaled",
+          "by": "Sandrea",
+          "parts": [ { "letter": "Q", "size": 27383354, "zip": 14149279089, "crc32": "84bb225e" } ]
+        },
+        { "id": "faithful-interface", "name": "Interface", "note": "only for the default UI; early work", "needs": ["mod:VanillaHelpers.dll"], "advice": "DXVK is recommended.",
+          "parts": [ { "letter": "I", "size": 11848873, "zip": 11493699897, "crc32": "a739c192" } ] },
+        { "id": "faithful-loading", "name": "Loading screens", "note": "", "needs": ["mod:VanillaHelpers.dll"], "advice": "DXVK is recommended.",
+          "parts": [ { "letter": "L", "size": 32823115, "zip": 11505548828, "crc32": "78e6e858" } ] },
+        { "id": "faithful-maps", "name": "Maps", "note": "some flaws; work in progress", "needs": ["mod:VanillaHelpers.dll"], "advice": "It has no maps for the zones added in 1.18.1.",
+          "parts": [ { "letter": "M", "size": 399059412, "zip": 11538372001, "crc32": "a0645202" } ] }
+      ]
+    }
+  ]
+}

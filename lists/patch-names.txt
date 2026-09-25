@@ -1,0 +1,92 @@
+# What each lettered patch usually is.  Letter | name
+#
+# HOW THESE WERE ARRIVED AT, because it changes how much to trust each one.
+#
+# Most people get these from Project Reforged, whose downloads page lists what
+# each letter is:
+#
+#   https://projectreforged.github.io/vanilla/downloads/turtle/
+#
+# That is a starting point rather than an answer, so the letters below were
+# checked against a real client on 2026-09-17 by opening each MPQ with
+# tools/model-browser/lib/mpq.js and asking whether it holds a file
+# characteristic of that kind of pack. The reader cannot enumerate an archive,
+# but it can answer "do you contain this path", which is enough.
+#
+#   VERIFIED, an archive really does hold that kind of file:
+#     A  character models, skins and hair, both sexes
+#     C  creature models
+#     D  a building WMO
+#     E  liquid and environment textures
+#     I  UI buttons and minimap art
+#     M  world map art
+#     P  spell effect models
+#     S  music
+#     T  character skins, hair and armour textures
+#     Y  Interface\GlueXML\AccountLogin.lua, containing Autologin_Table,
+#        Autologin_Save and the AutologinAccountButton frames. This one is not
+#        an inference at all: the file says what it is.
+#     O  Patch.toc reads "Twow Raid Visuals 1.4.18", from
+#        github.com/MarcelineVQ/twow-raid-visuals, and it CARRIES A (listfile)
+#        so its 120 entries can simply be read: ~90 Spells\DangerZone_*.m2
+#        ground markers named by size and seconds, seven DBCs to bind them to
+#        real spells, and WMO edits for Karazhan and Blackrock. The only two
+#        letters so far that identify themselves rather than being inferred.
+#
+#        AND IT CRASHED A CLIENT, 2026-09-17, hours after being copied into
+#        octow by hand: ERROR #132, ACCESS_VIOLATION at 0060B0A9 reading
+#        0x34, twice in a row on entering the world. "Seven DBCs to bind them
+#        to real spells" is the whole of it, and it was written above without
+#        noticing what it meant: those are not additions, they are FULL
+#        REPLACEMENT COPIES of Spell.dbc, SpellVisual.dbc, SpellVisualKit.dbc,
+#        SpellVisualEffectName.dbc, SpellIcon.dbc, SoundEntries.dbc and
+#        CreatureModelData.dbc, frozen at the Turtle build the patch was made
+#        against. Measured against this client's own patch-5.mpq: Spell.dbc
+#        28,016 rows where Turtle ships 28,018, missing 65313 and 65314.
+#
+#        AND IT WINS OVER TURTLE'S OWN. The received rule is that patches load
+#        in ASCII order and a letter sorts after a digit, so patch-O is read
+#        after patch-5 and its copies replace Turtle's current ones. The crash
+#        is the measurement: it appeared when the file was copied in and went
+#        when it was renamed away, and an overridden DBC that never wins could
+#        not have done either. It is also the only way the whole lettered
+#        patch ecosystem works at all.
+#
+#        AND THE FIRST VERSION OF THIS NOTE BLAMED THE COPYING, on the grounds
+#        that the octo launcher keeps clean-turtle's copy in step with that
+#        client. Measured an hour later, and it does not: clean-turtle's own
+#        patch-5 is the same 28,018 row build octow has, so patch-O is two
+#        spells behind THERE TOO, and every one of the seven DBCs differs by
+#        the same amounts in both clients. Nothing keeps a lettered patch in
+#        step with a client that updates underneath it. The rule that survives
+#        is narrower and worse: a DBC in a patch is frozen at the day it was
+#        built, so the only client it is safe on is one that has not moved
+#        since, and no launcher on either side is watching.
+#
+#   FROM THE PAGE ONLY, not confirmed here:  B, G, L, N, U
+#
+#   NOT LISTED AND UNKNOWN: X. It is 135 MB on this machine and matched none of
+#   forty probes. Whoever knows what it is can name it with `L` in the launcher.
+#
+# THIS IS STILL ALLOWED TO BE WRONG. Nothing identifies an MPQ from the inside
+# by name, so somebody whose patch-A came from elsewhere gets a name that lies.
+# That is why the row keeps showing the file name beside the label, why `L`
+# overrides any of it, and why nothing but the label depends on it.
+
+A | Characters and NPCs
+B | Buildings
+C | Classic creatures
+D | World doodads
+E | Environment and fog
+G | Gear and weapons
+I | Interface
+L | Female models
+M | Maps and loading screens
+N | Darker nights
+O | Raid visuals
+P | Spell effects
+S | Sound and music
+T | HD character textures
+U | Ultra textures
+V | Custom comfy content
+Y | Auto login
