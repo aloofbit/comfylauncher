@@ -122,7 +122,7 @@ namespace ComfyLauncher
 
         // THE PATCH LETTERS IT WRITES, every choice included. Two packs that
         // write the same Data\patch-X.mpq cannot both be on a client, so
-        // ticking one unticks the other. Project Reforged and Faithful
+        // ticking one is refused while the other is on. Project Reforged and Faithful
         // Upscale share nine letters.
         public readonly HashSet<char> Writes = new HashSet<char>();
 
@@ -457,9 +457,22 @@ namespace ComfyLauncher
                                    (r.Writes.Overlaps(writes) || Named(r, row) || row.AllNeeds.Any(n => Named(r, n)))).ToList();
         }
 
+        // Ticked packages that a row, or anything it needs, cannot be on
+        // with. Ticking such a row is refused rather than unticking them:
+        // the owner's call, 2026-09-25, so that a 14 GB pack never goes off
+        // as a side effect of another tick.
+        public List<Row> ClashingOn(Row row)
+        {
+            var mine = new List<Row> { row };
+            mine.AddRange(row.AllNeeds);
+            return Rows.Where(r => r.On && r.Kind == RowKind.Check && !mine.Contains(r) && mine.Any(m => Clashes(r, m))).ToList();
+        }
+
         // Ticking a row ticks what it needs, all the way down, brings back
-        // what unticking it took, and unticks any row that writes one of the
-        // same patch files. Returns the rows it unticked, so the flash can
+        // what unticking it took unless something ticked since clashes with
+        // it, and unticks any row that writes one of the same patch files.
+        // Space checks ClashingOn first, so that last step is only reached
+        // from other callers. Returns the rows it unticked, so the flash can
         // say so.
         public List<Row> TickOn(Row row, int choice = 0)
         {
@@ -468,7 +481,7 @@ namespace ComfyLauncher
             if (!row.On) row.Choice = choice;
             row.On = true;
             foreach (var need in row.AllNeeds) off.AddRange(TickOn(need, need.Choice));
-            foreach (var back in row.CascadedOff.Where(r => !r.On && Rows.Contains(r)).ToList()) off.AddRange(TickOn(back, back.Choice));
+            foreach (var back in row.CascadedOff.Where(r => !r.On && Rows.Contains(r) && ClashingOn(r).Count == 0).ToList()) off.AddRange(TickOn(back, back.Choice));
             row.CascadedOff.Clear();
             foreach (var other in Rows.Where(r => r != row && r.On && r.Kind == RowKind.Check && Clashes(r, row)).ToList())
             {
@@ -905,10 +918,10 @@ namespace ComfyLauncher
                 kb: 10961 * MB, parts: "Patch-B.mpq to Patch-H.mpq"));
             var fchar = Add("Mods", RowKind.Check, "Characters and gear", "characters, weapons and armour, upscaled");
             fchar.Id = "faithful-characters";
-            // Declared: both retexture characters and gear, with no patch
-            // letter in common (T and U against O and P), so the later letter
-            // would win without a word.
-            fchar.Conflicts.Add("reforged-hd-textures");
+            // Declared: Faithful's 4x character textures break on Reforged's
+            // HD models, with no patch letter in common, so nothing else
+            // would stop the two. Its children need it, so they are covered.
+            fchar.Conflicts.Add("reforged-characters");
             fchar.Choices = new[] { "4x", "2x" };
             fchar.ChoiceKb = new[] { 2110 * MB, 510 * MB };
             fchar.ChoiceParts = new[] { "Patch-O.mpq, Patch-P.mpq", "Patch-O.mpq, Patch-P.mpq, the lighter builds" };

@@ -135,7 +135,7 @@
           "name": "Characters and gear",
           "note": "characters, weapons and armour, upscaled",
           "needs": ["mod:VanillaHelpers.dll"],
-          "conflicts": ["reforged-hd-textures"],
+          "conflicts": ["reforged-characters"],
           "advice": "Try 2x if the game runs out of memory in cities.",
           "choices": [
             { "name": "4x", "parts": [

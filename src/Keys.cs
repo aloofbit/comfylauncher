@@ -216,6 +216,19 @@ namespace ComfyLauncher
                 return;
             }
 
+            // Another package in the way is named, not unticked. Short, since
+            // the flash shares its line with the button: the pack once, then
+            // its rows.
+            var clashing = app.ClashingOn(row);
+            if (clashing.Count > 0)
+            {
+                var packs = clashing.Select(r => r.Pack).Distinct().ToList();
+                app.Flash = "Untick " + (packs.Count == 1 && packs[0] != null && packs[0] != row.Pack
+                    ? packs[0] + " " + string.Join(", ", clashing.Select(r => r.Label))
+                    : string.Join(", ", clashing.Select(r => r.Pack == row.Pack ? r.Label : r.FullName))) + " first";
+                return;
+            }
+
             var before = app.Rows.Where(r => r.On).ToList();
             var unticked = app.TickOn(row);
             var added = app.Rows.Where(r => r.On && r != row && !before.Contains(r)).Select(r => r.Label).ToList();
