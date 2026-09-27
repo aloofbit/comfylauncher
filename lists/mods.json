@@ -297,15 +297,15 @@
     }
   },
   {
-    "_why": "Added 2026-09-26: the /a chat room, one room for players on any server, through the hub on our VPS (wss://comfycraft.dedyn.io/aim, unit comfy-aim). The pin is our own hash of a fresh download of the release asset, and it matched the digest GitHub publishes for it.",
+    "_why": "Added 2026-09-26: the /a chat room, one room for players on any server, through the hub on our VPS (wss://comfycraft.dedyn.io/aim, unit comfy-aim). The pin is our own hash of a fresh download of the release asset, and it matched the digest GitHub publishes for it. Re-pinned 2026-09-27 to v0.1.1-alpha: /a talks and /aim is for settings, Change Name, Sign On and Sign Off, 100 lines of history that survive a hub restart, and a dot command typed in AIM goes to the player's server instead of the room.",
     "name": "Chat room",
     "file": "comfyaim.dll",
     "note": "one chat room for every server, /a to talk",
-    "version": "v0.1.0-alpha",
+    "version": "v0.1.1-alpha",
     "from": "https://github.com/aloofbit/comfyaim",
-    "url": "https://github.com/aloofbit/comfyaim/releases/download/v0.1.0-alpha/comfyaim-v0.1.0-alpha.zip",
-    "sha256": "9a0b8d61b653897718ebf6f34991a4a51f9ece066581d89068918420abbe9e03",
-    "file_sha256": "658e2cf1798807250e223e85230637505761c16a585383ae68e49bb274c4ca45",
+    "url": "https://github.com/aloofbit/comfyaim/releases/download/v0.1.1-alpha/comfyaim-v0.1.1-alpha.zip",
+    "sha256": "edb6ad26ba2b1c1ab4cb1870e1b892bd1cb6fb7f19719e7d2e93a7f4fa00b8f9",
+    "file_sha256": "36f6786f30557b70e4c205813cabd71c31cce711a8ed03309be777787394221e",
     "_extract_comment": "NO ini, on purpose. comfyaim.ini holds the player's secret, which is what proves their nick is theirs, and an update rewrites every file named here: shipping the ini would sign every updated player on as nobody, with their nick lost to them. The DLL's built-in defaults are the ini's (live hub, on), and it writes the file itself when it first saves a nick. The addon is /a, the window and the friends list button; the DLL does nothing visible without it.",
     "extract": {
       "comfyaim.dll": "comfyaim.dll",
