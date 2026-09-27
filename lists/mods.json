@@ -297,15 +297,15 @@
     }
   },
   {
-    "_why": "Added 2026-09-26: the /a chat room, one room for players on any server, through the hub on our VPS (wss://comfycraft.dedyn.io/aim, unit comfy-aim). The pin is our own hash of a fresh download of the release asset, and it matched the digest GitHub publishes for it. Re-pinned 2026-09-27 to v0.1.1-alpha: /a talks and /aim is for settings, Change Name, Sign On and Sign Off, 100 lines of history that survive a hub restart, and a dot command typed in AIM goes to the player's server instead of the room. Then the same day to v0.1.2-alpha, which shows the room's history in the window: lines that came before the window was first opened, the history at sign on and after /reload among them, had been dropped.",
+    "_why": "Added 2026-09-26: the /a chat room, one room for players on any server, through the hub on our VPS (wss://comfycraft.dedyn.io/aim, unit comfy-aim). The pin is our own hash of a fresh download of the release asset, and it matched the digest GitHub publishes for it. Re-pinned 2026-09-27 to v0.1.1-alpha: /a talks and /aim is for settings, Change Name, Sign On and Sign Off, 100 lines of history that survive a hub restart, and a dot command typed in AIM goes to the player's server instead of the room. Then the same day to v0.1.2-alpha, which shows the room's history in the window: lines that came before the window was first opened, the history at sign on and after /reload among them, had been dropped. Re-pinned 2026-09-27 to v0.1.3-alpha, which sends the login address so a player shows their server's tag from servers.txt (COMFY, OCTO) rather than the realm name.",
     "name": "Chat room",
     "file": "comfyaim.dll",
     "note": "one chat room for every server, /a to talk",
-    "version": "v0.1.2-alpha",
+    "version": "v0.1.3-alpha",
     "from": "https://github.com/aloofbit/comfyaim",
-    "url": "https://github.com/aloofbit/comfyaim/releases/download/v0.1.2-alpha/comfyaim-v0.1.2-alpha.zip",
-    "sha256": "91588efc597cc092dd6856402628b314fa9031e4f27175bfc081dcc2137b3628",
-    "file_sha256": "69a4c7cef05ceb4f4d58efdfe685ad0a3a17de227a459f210a18e4359b215c23",
+    "url": "https://github.com/aloofbit/comfyaim/releases/download/v0.1.3-alpha/comfyaim-v0.1.3-alpha.zip",
+    "sha256": "560104a3b73a58ac030791e3d7c8d89a9b3bf8993fd7e0662612c1f6591a78ff",
+    "file_sha256": "cf6ba9c733c35a988ccefe0ce3348b3fd45e52b9f5d2e2371aca3cdf4e37a461",
     "_extract_comment": "NO ini, on purpose. comfyaim.ini holds the player's secret, which is what proves their nick is theirs, and an update rewrites every file named here: shipping the ini would sign every updated player on as nobody, with their nick lost to them. The DLL's built-in defaults are the ini's (live hub, on), and it writes the file itself when it first saves a nick. The addon is /a, the window and the friends list button; the DLL does nothing visible without it.",
     "extract": {
       "comfyaim.dll": "comfyaim.dll",
