@@ -112,7 +112,9 @@
       "title": "HD packs from Faithful Upscale",
       "pack": "Faithful",
       "_zip": "https://drive.usercontent.google.com/download?id=150iAzKo70RjKlxyn8sA0-VTRypr7TCH7&export=download&confirm=t",
-      "links": [],
+      "links": [
+        { "name": "Original post", "note": "forum.turtlecraft.gg", "url": "https://forum.turtlecraft.gg/viewtopic.php?t=22090" }
+      ],
       "packages": [
         {
           "id": "faithful-world",
@@ -159,7 +161,10 @@
         { "id": "faithful-loading", "name": "Loading screens", "note": "", "needs": ["mod:VanillaHelpers.dll"], "advice": "DXVK is recommended.",
           "parts": [ { "letter": "L", "size": 32823115, "zip": 11505548828, "crc32": "78e6e858" } ] },
         { "id": "faithful-maps", "name": "Maps", "note": "some flaws; work in progress", "needs": ["mod:VanillaHelpers.dll"], "advice": "It has no maps for the zones added in 1.18.1.",
-          "parts": [ { "letter": "M", "size": 399059412, "zip": 11538372001, "crc32": "a0645202" } ] }
+          "parts": [ { "letter": "M", "size": 399059412, "zip": 11538372001, "crc32": "a0645202" } ] },
+        { "id": "faithful-water", "name": "Water", "note": "Epoch water, more like retail", "advice": "Project Reforged's World already has this water.",
+          "_why": "Added 2026-09-28. An extra in the opening post, a Drive file of its own and not in the zip, so the part has a url. Drive serves it as patch-W.mpq, but W is comfylogin, so it goes in as X: after P, as the thread asks of other packs. Its 152 files are 120 water frames (ocean, lake, river, slime, lava), all also in Reforged's patch-E; with Reforged World on, the owner saw no change. The frames are encrypted in the MPQ, so their size was not read. The row does not need VanillaHelpers; that is not measured.",
+          "parts": [ { "letter": "X", "size": 20411526, "url": "https://drive.usercontent.google.com/download?id=1xRx9OrznbgbE1uBae3H3OGke9UoXtzmU&export=download&confirm=t", "sha256": "30a969c185cc082a0eb158a7901de889af815426c1e5baec373649688b3151aa" } ] }
       ]
     }
   ]
