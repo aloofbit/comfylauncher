@@ -23,7 +23,7 @@ namespace ComfyLauncher
         {
             ("fullscreen", "Fullscreen", "the whole screen", "0", "0"),
             ("windowed", "Windowed", "a window you can move", "1", "0"),
-            ("borderless", "Windowed fullscreen", "no border, fills the screen", "1", "1"),
+            ("borderless", "Windowed, maximized", "no border, fills the screen", "1", "1"),
         };
 
         // FoV is stored in radians and read in degrees. Ground clutter
