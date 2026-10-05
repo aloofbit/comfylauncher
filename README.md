@@ -22,6 +22,7 @@ Little launcher project for smol server. Thanks for seeing.
 - Realm choice
 - Small File
 - Works through Steam overlay
+- Works on Linux through Proton or Wine
 - Secret features :)
 
 ## Build

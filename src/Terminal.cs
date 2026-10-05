@@ -17,6 +17,13 @@ namespace ComfyLauncher
     //
     // Needs virtual terminal processing: Windows 10 1809 and later, and every
     // Windows Terminal.
+    //
+    // UNDER WINE (Proton, Lutris, Bottles) THE CLASSIC CONSOLE CALLS DRAW
+    // INSTEAD. Wine's conhost accepts the virtual terminal flag and then does
+    // not parse the output: every escape sequence shows as text. It does
+    // support a second screen buffer and WriteConsoleOutputW, which give the
+    // same alternate buffer and the same frames. --classic-console forces
+    // this path on Windows, to test it there.
     static class Terminal
     {
         const string Esc = "\x1b[";
@@ -31,6 +38,35 @@ namespace ComfyLauncher
         static extern uint GetConsoleOutputCP();
         [DllImport("kernel32.dll")]
         static extern bool SetConsoleOutputCP(uint codePage);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        static extern IntPtr GetModuleHandle(string name);
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi)]
+        static extern IntPtr GetProcAddress(IntPtr module, string name);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern IntPtr CreateConsoleScreenBuffer(uint access, uint share, IntPtr security, uint flags, IntPtr reserved);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetConsoleActiveScreenBuffer(IntPtr handle);
+        [DllImport("kernel32.dll")]
+        static extern bool SetConsoleCursorInfo(IntPtr handle, ref CursorInfo info);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool WriteConsoleOutputW(IntPtr handle, CharInfo[] buffer, Coord size, Coord from, ref SmallRect region);
+        [DllImport("kernel32.dll")]
+        static extern bool CloseHandle(IntPtr handle);
+
+        [StructLayout(LayoutKind.Sequential)] struct Coord { public short X, Y; }
+        [StructLayout(LayoutKind.Sequential)] struct SmallRect { public short Left, Top, Right, Bottom; }
+        [StructLayout(LayoutKind.Sequential)] struct CursorInfo { public uint Size; public bool Visible; }
+        [StructLayout(LayoutKind.Explicit, CharSet = CharSet.Unicode)] struct CharInfo { [FieldOffset(0)] public char Char; [FieldOffset(2)] public short Attributes; }
+
+        // Wine's ntdll exports wine_get_version; Windows' does not.
+        public static readonly bool UnderWine = GetProcAddress(GetModuleHandle("ntdll.dll"), "wine_get_version") != IntPtr.Zero;
+
+        // Set by --classic-console, before Enter.
+        public static bool ForceClassic;
+
+        // The second screen buffer, when the classic calls draw. Zero otherwise.
+        static IntPtr classic;
 
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool OpenClipboard(IntPtr hWndNewOwner);
@@ -81,6 +117,7 @@ namespace ComfyLauncher
         {
             IntPtr handle = GetStdHandle(StdOutput);
             if (!GetConsoleMode(handle, out oldMode)) return false;
+            if (UnderWine || ForceClassic) return EnterClassic();
             if (!SetConsoleMode(handle, oldMode | EnableVirtualTerminalProcessing)) return false;
             modeChanged = true;
 
@@ -103,8 +140,34 @@ namespace ComfyLauncher
             return true;
         }
 
+        // The classic path: a screen buffer of its own, made active, with the
+        // cursor hidden. Leaving makes the original buffer active again.
+        static bool EnterClassic()
+        {
+            const uint GenericReadWrite = 0x80000000 | 0x40000000, ShareReadWrite = 1 | 2, TextModeBuffer = 1;
+            classic = CreateConsoleScreenBuffer(GenericReadWrite, ShareReadWrite, IntPtr.Zero, TextModeBuffer, IntPtr.Zero);
+            if (classic == IntPtr.Zero || classic == new IntPtr(-1)) { classic = IntPtr.Zero; return false; }
+            if (!SetConsoleActiveScreenBuffer(classic)) { CloseHandle(classic); classic = IntPtr.Zero; return false; }
+            var cursor = new CursorInfo { Size = 25, Visible = false };
+            SetConsoleCursorInfo(classic, ref cursor);
+
+            try { oldTitle = Console.Title; } catch { oldTitle = null; }
+            Console.Title = "ComfyCraft";
+            Console.TreatControlCAsInput = true;
+            last = null;
+            return true;
+        }
+
         public static void Leave()
         {
+            if (classic != IntPtr.Zero)
+            {
+                SetConsoleActiveScreenBuffer(GetStdHandle(StdOutput));
+                CloseHandle(classic);
+                classic = IntPtr.Zero;
+                if (oldTitle != null) Console.Title = oldTitle;
+                return;
+            }
             if (stdout == null) return;
             Write(Esc + "0m" + Esc + "?7h" + Esc + "?25h" + Esc + "?1049l");
             if (modeChanged)
@@ -130,6 +193,7 @@ namespace ComfyLauncher
         // A new window size repaints everything.
         public static void Present(Screen frame)
         {
+            if (classic != IntPtr.Zero) { PresentClassic(frame); return; }
             bool full = last == null || last.Width != frame.Width || last.Height != frame.Height;
             var sb = new StringBuilder();
             if (full) sb.Append(Esc + "0m" + Esc + "2J");
@@ -153,6 +217,37 @@ namespace ComfyLauncher
             sb.Append(Esc + "0m");
             Write(sb.ToString());
             last = frame;
+        }
+
+        // The same rows, as character cells with console attributes.
+        static void PresentClassic(Screen frame)
+        {
+            bool full = last == null || last.Width != frame.Width || last.Height != frame.Height;
+            var cells = new CharInfo[frame.Width];
+            for (int y = 0; y < frame.Height; y++)
+            {
+                if (!full && frame.RowEquals(last, y)) continue;
+                for (int x = 0; x < frame.Width; x++)
+                    cells[x] = new CharInfo { Char = frame.CharAt(x, y), Attributes = Attribute(frame.InkAt(x, y)) };
+                var region = new SmallRect { Left = 0, Top = (short)y, Right = (short)(frame.Width - 1), Bottom = (short)y };
+                WriteConsoleOutputW(classic, cells, new Coord { X = (short)frame.Width, Y = 1 }, new Coord(), ref region);
+            }
+            last = frame;
+        }
+
+        // Foreground bits: 1 blue, 2 green, 4 red, 8 bright. Black behind.
+        static short Attribute(Ink ink)
+        {
+            switch (ink)
+            {
+                case Ink.DarkGray: return 8;
+                case Ink.White:    return 15;
+                case Ink.Cyan:     return 11;
+                case Ink.Yellow:   return 14;
+                case Ink.Green:    return 10;
+                case Ink.Red:      return 12;
+                default:           return 7;
+            }
         }
 
         static string Sgr(Ink ink)

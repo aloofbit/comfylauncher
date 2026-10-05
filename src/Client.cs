@@ -168,6 +168,24 @@ namespace ComfyLauncher
         public List<string> Resolutions()
         {
             var sizes = new List<string>();
+            // In a method of its own, so that a runtime with no
+            // System.Management (wine-mono may lack it) throws inside this
+            // try, and not when Resolutions itself is compiled.
+            try { sizes.AddRange(Wmi()); } catch { }
+            string now = ConfigValue("gxResolution");
+            if (Regex.IsMatch(now, @"^\d+x\d+$")) sizes.Add(now);
+
+            return sizes.Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(s => s.Split('x'))
+                .Where(p => p.Length == 2 && int.TryParse(p[0], out int w) && int.TryParse(p[1], out int h) && w >= 640 && h >= 480)
+                .OrderByDescending(p => int.Parse(p[0])).ThenByDescending(p => int.Parse(p[1]))
+                .Select(p => p[0] + "x" + p[1]).ToList();
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        static List<string> Wmi()
+        {
+            var sizes = new List<string>();
             try
             {
                 using (var q = new System.Management.ManagementObjectSearcher("SELECT HorizontalResolution, VerticalResolution FROM CIM_VideoControllerResolution"))
@@ -183,14 +201,7 @@ namespace ComfyLauncher
                             if (v["CurrentHorizontalResolution"] != null) sizes.Add(v["CurrentHorizontalResolution"] + "x" + v["CurrentVerticalResolution"]);
                 }
                 catch { }
-            string now = ConfigValue("gxResolution");
-            if (Regex.IsMatch(now, @"^\d+x\d+$")) sizes.Add(now);
-
-            return sizes.Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(s => s.Split('x'))
-                .Where(p => p.Length == 2 && int.TryParse(p[0], out int w) && int.TryParse(p[1], out int h) && w >= 640 && h >= 480)
-                .OrderByDescending(p => int.Parse(p[0])).ThenByDescending(p => int.Parse(p[1]))
-                .Select(p => p[0] + "x" + p[1]).ToList();
+            return sizes;
         }
 
         public static string Aspect(string size)

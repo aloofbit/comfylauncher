@@ -22,6 +22,7 @@ namespace ComfyLauncher
     //   --packages <file>    packages.json, for a manifest without packages
     //   --dry-run            Enter shows the file operations and does none
     //   --running            print each game process and its path, and quit
+    //   --classic-console    draw with the console calls Wine uses, on Windows too
     //
     // The .ps1 launcher's own arguments are accepted, because the last .ps1
     // launcher restarts into this exe with them: a client folder, -Source <url>,
@@ -175,6 +176,7 @@ namespace ComfyLauncher
 
         static int Live(App app)
         {
+            Terminal.ForceClassic = Environment.GetCommandLineArgs().Contains("--classic-console");
             if (!Terminal.Enter())
             {
                 Console.Error.WriteLine("ComfyLauncher needs a console window.");
