@@ -1,8 +1,8 @@
 # ComfyLauncher
 
-**Bugs, questions and screenshots: [join our Discord](https://discord.gg/YSWzYk8xP).**
+**Bugs, questions and screenshots: [join our Discord](https://discord.gg/uhefX2efB7).**
 
-[![Discord](https://img.shields.io/badge/Discord-ComfyCraft-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/YSWzYk8xP)
+[![Discord](https://img.shields.io/badge/Discord-ComfyCraft-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/uhefX2efB7)
 
 Little launcher project for smol server. Thanks for seeing.
 
