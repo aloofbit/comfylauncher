@@ -110,6 +110,9 @@ namespace ComfyLauncher
         public string Version = "";
         public string[] ChoiceVersion;
         public List<string> Supersedes = new List<string>();
+        // Files in the client's folder a mod took the place of (2026-10-06: comfyatmos.dll replaced comfyfog.dll and
+        // comfygrass.dll). After the mod is in place, each old DLL leaves dlls.txt and each file goes aside.
+        public List<string> SupersedesFiles = new List<string>();
 
         // Operations of its own, for a row that is not a package: an addon
         // added from a link.
@@ -845,14 +848,12 @@ namespace ComfyLauncher
             var ui = Add("Mods", RowKind.Required, "ComfyUI", "the client's own UI, corrected for this server",
                          have: Have.Behind, kb: 1037, parts: "the ComfyUI addon");
             content.Ours = ui.Ours = true;
-            var grass = Add("Mods", RowKind.Check, "Swaying grass", "grass sways in the wind and parts around you",
-                            on: true, have: Have.Current, kb: 380, parts: "comfygrass.dll, comfygrass.ini, the ComfyGrass addon");
             // Behind, so an update has an optional row of ours to respect.
-            var fog = Add("Mods", RowKind.Check, "Fog and light", "moodier fog, and light through the trees",
-                          on: true, have: Have.Behind, kb: 410, parts: "comfyfog.dll, comfyfog.ini, the ComfyAtmosphere addon");
+            var fog = Add("Mods", RowKind.Check, "Fog and light", "moodier fog, light through the trees, and grass in the wind",
+                          on: true, have: Have.Behind, kb: 450, parts: "comfyatmos.dll, comfyatmos.ini, the ComfyAtmosphere addon");
             var time = Add("Mods", RowKind.Check, "Time of day", "choose the time of day, on your screen only",
                            kb: 260, parts: "comfytime.dll, comfytime.ini");
-            grass.Ours = fog.Ours = time.Ours = true;
+            fog.Ours = time.Ours = true;
 
             // ---- Mods: game fixes
             Heading("Mods", "Game fixes");
@@ -960,7 +961,7 @@ namespace ComfyLauncher
             Heading("Addons", "Part of a mod");
             // The ComfyUI addon is part of the ComfyCraft section, not of the
             // package with its own name.
-            foreach (var (name, owner, row) in new[] { ("ComfyUI", "ComfyCraft", ui), ("ComfyGrass", grass.Label, grass), ("ComfyAtmosphere", fog.Label, fog) })
+            foreach (var (name, owner, row) in new[] { ("ComfyUI", "ComfyCraft", ui), ("ComfyAtmosphere", fog.Label, fog) })
             {
                 var part = Add("Addons", RowKind.Part, name, "part of " + owner);
                 part.PartOf = owner;

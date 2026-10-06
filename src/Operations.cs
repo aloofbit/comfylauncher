@@ -270,6 +270,19 @@ namespace ComfyLauncher
                     ops.Add(new Op { Text = "move " + Rel(app, dead) + " to " + AsideDir + @"\AddOns, now part of " + row.Label,
                         Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "AddOns")); Directory.Move(dead, Free(Path.Combine(aside, "AddOns"), old)); } });
                 }
+
+            // The same for the files a mod replaced (2026-10-06), after it is in place: each old DLL leaves dlls.txt,
+            // or both would load, and each file goes aside, never deleted.
+            if (action == "install" || action == "update" || action == "reinstall")
+                foreach (var old in row.SupersedesFiles)
+                {
+                    string name = old, dead = c.PathOf(old);
+                    if (c.DllEnabled(name))
+                        ops.Add(new Op { Text = "dlls.txt: take out " + name + ", now part of " + row.Label, Run = _ => SetDlls(c, new string[0], new[] { name }) });
+                    if (File.Exists(dead))
+                        ops.Add(new Op { Text = "move " + name + " to " + AsideDir + @"\Mods, now part of " + row.Label,
+                            Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "Mods")); File.Move(dead, Free(Path.Combine(aside, "Mods"), name)); } });
+                }
             return ops;
         }
 

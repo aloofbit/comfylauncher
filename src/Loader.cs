@@ -238,6 +238,15 @@ namespace ComfyLauncher
                 row.PartList = ModParts(mod);
                 row.StateKey = "mod:" + file;
                 row.Version = mod.Str("version");
+                // A MOD THAT REPLACED OTHERS names their files and add-on folders (2026-10-06: comfyatmos.dll took the
+                // place of comfyfog.dll and comfygrass.dll). Their dlls.txt lines are this mod's, not a stranger's.
+                row.SupersedesFiles.AddRange(mod.Strs("supersedes_files").Where(Safe.IsName));
+                row.Supersedes.AddRange(mod.Strs("supersedes").Where(Safe.IsName));
+                accounted.AddRange(row.SupersedesFiles);
+                foreach (var old in row.Supersedes) claimedAddons.Add((old, row, row.Label + ", which replaced it"));
+                bool oldOn = row.SupersedesFiles.Any(f => client.DllEnabled(f));
+                bool oldThere = oldOn || row.SupersedesFiles.Any(f => File.Exists(client.PathOf(f)))
+                                || row.Supersedes.Any(a => Directory.Exists(client.AddonPath(a)));
 
                 if (!inject) { row.Have = Have.None; row.On = false; }
                 else
@@ -251,6 +260,10 @@ namespace ComfyLauncher
                                     : mod.Str("file_sha256") != "" && !Client.Sha256(client.PathOf(file)).Equals(mod.Str("file_sha256"), StringComparison.OrdinalIgnoreCase);
                         if (behind && row.Have == Have.Current) row.Have = Have.Behind;
                     }
+                    // The old mod on is this one on, under its old name: an update brings the new file and retires
+                    // the old. Old files still there keep it out of date until they are gone.
+                    if (!present && !enabled && oldOn) { row.On = true; row.Have = Have.Behind; }
+                    else if (oldThere && row.Have == Have.Current) row.Have = Have.Behind;
                 }
 
                 var variant = mods.FirstOrDefault(v => v.Bool("variant") && v.Str("file").Equals(file, StringComparison.OrdinalIgnoreCase));
