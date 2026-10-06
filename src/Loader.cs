@@ -525,6 +525,10 @@ namespace ComfyLauncher
             music.Id = "music";
             music.On = settings.Bool("music", false);
             auto.Advice = "Any key stops the countdown.";
+            // A Link to a folder: the same shell call opens it in Explorer.
+            var folder = Add("Settings", RowKind.Link, "Open the WoW folder", client.Root);
+            folder.Id = "open-folder";
+            folder.Url = client.Root;
             Display.AddRows(app, client, t => Heading("Settings", t));
 
             App.DeriveWrites(app);

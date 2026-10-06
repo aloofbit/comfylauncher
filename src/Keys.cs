@@ -247,6 +247,9 @@ namespace ComfyLauncher
             return into;
         }
 
+        // A Link whose Url is a folder on this machine, not a web address.
+        public static bool IsFolder(Row row) => row.Url != null && !row.Url.Contains("://") && System.IO.Directory.Exists(row.Url);
+
         static void Enter(App app, Row row)
         {
             if (row == null) return;
@@ -350,7 +353,7 @@ namespace ComfyLauncher
                 // A key script must not open a browser.
                 if (!Program.Scripted)
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(row.Url) { UseShellExecute = true });
-                app.Flash = "opened in your browser";
+                app.Flash = IsFolder(row) ? "opened in Explorer" : "opened in your browser";
                 return;
             }
             var plan = Plan(row);

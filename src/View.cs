@@ -127,7 +127,7 @@ namespace ComfyLauncher
 
         public static string Detail(App app, Row row)
         {
-            if (row.Kind == RowKind.Link) return "Opens " + row.Url + " in your browser.";
+            if (row.Kind == RowKind.Link) return "Opens " + row.Url + (Keys.IsFolder(row) ? " in Explorer." : " in your browser.");
             if (row.Kind == RowKind.Setting || row.Kind == RowKind.Config || row.Id == Display.SaveId) return row.Advice;
             if (row.Kind == RowKind.Part)
                 return row.PartOf == "ComfyCraft"
