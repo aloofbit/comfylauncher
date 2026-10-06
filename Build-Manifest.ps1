@@ -525,6 +525,11 @@ if (Test-Path -LiteralPath $modsFile) {
             # an addon that goes aside when the mod is off. The C# launcher
             # reads it; the .ps1 launcher does not.
             if ($m.also) { $entry.also = @($m.also) }
+            # The files and add-on folders this mod took the place of (2026-10-06: comfyatmos.dll for comfyfog.dll and
+            # comfygrass.dll). The C# launcher takes the old DLLs out of dlls.txt and sets the files aside as it
+            # installs this one. The .ps1 launcher does not read them.
+            if ($m.supersedes_files) { $entry.supersedes_files = @($m.supersedes_files) }
+            if ($m.supersedes) { $entry.supersedes = @($m.supersedes) }
             # A variant is another build of a file some other entry already
             # names. file_sha256 is the hash of that FILE as it lands, not of
             # the download, and is how the launcher tells the builds apart.
