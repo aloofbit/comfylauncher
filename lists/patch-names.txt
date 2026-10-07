@@ -85,6 +85,8 @@ M | Maps and loading screens
 N | Darker nights
 O | Raid visuals
 P | Spell effects
+Q | Reforged World fixes
+R | Reforged Characters fixes
 S | Sound and music
 T | HD character textures
 U | Ultra textures

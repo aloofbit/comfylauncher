@@ -341,7 +341,8 @@ namespace ComfyLauncher
                     List<Part> PartsOf(Dictionary<string, object> holder) => holder.Objs("parts").Select(p => new Part
                     {
                         Type = PartType.Patch, Letter = char.ToUpperInvariant(p.Str("letter")[0]), Size = p.Long("size"),
-                        Url = p.Str("url") != "" ? p.Str("url") : zip, ZipOffset = p.Get("zip") != null ? p.Long("zip") : -1,
+                        // Relative for a part Build-Manifest added from patches\ (X-Package).
+                        Url = p.Str("url") != "" ? Absolute(manifestUrl, p.Str("url")) : zip, ZipOffset = p.Get("zip") != null ? p.Long("zip") : -1,
                         Etag = p.Str("etag"), Crc32 = p.Str("crc32"), Sha256 = p.Str("sha256"),
                     }).ToList();
                     string By(Dictionary<string, object> holder, List<Part> parts) =>

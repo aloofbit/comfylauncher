@@ -1,0 +1,2 @@
+Comfy Reforged fixes: World models with their culling box corrected (github.com/aloofbit/comfyfixes)
+X-Package: reforged-world

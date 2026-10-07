@@ -2,13 +2,19 @@
 #
 # Big binaries, so they are NOT tracked. Put the .mpq here and a one line
 # description beside it as <name>.txt, which is what the launcher shows in the
-# note column. Two flags may go on a line of their own in that .txt:
+# note column. Three flags may go on a line of their own in that .txt:
 #
 #   X-OptIn: 1     the row starts unticked for everybody, and the patch stays
 #                  out of ComfyCraft.zip
 #   X-Required: 1  the row is ticked and cannot be unticked, and the launcher
 #                  holds back Start the game until the patch is installed and
 #                  current
+#   X-Package: <id>  no row of its own: the patch becomes a part of that
+#                  package in lists/packages.json, with its size and hash
+#                  filled in by the build, and stays out of ComfyCraft.zip.
+#                  patch-Q and patch-R (comfyfixes) ride with Reforged
+#                  World and Characters and gear this way. Build them with
+#                  node ../mods/comfyfixes/build.js --data <Data> --out patches
 #
 # patch-V.mpq is ours and REQUIRED. Its sidecar is tracked; the .mpq is not,
 # because it is rebuilt from the client's own files. Build it before

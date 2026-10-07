@@ -342,6 +342,7 @@ foreach ($s in @(Get-ChildItem -LiteralPath $Patches -Filter '*.txt' -File -Erro
 }
 
 $optInPatches = @{}
+$packageParts = New-Object System.Collections.ArrayList
 foreach ($p in $patchFiles) {
     Copy-Item -LiteralPath $p.FullName -Destination (Join-Path $files $p.Name) -Force
 
@@ -357,18 +358,42 @@ foreach ($p in $patchFiles) {
     # holds back Start the game until it is installed and current. patch-V is
     # the first, since 2026-09-23: without it the create screen does not offer
     # the new race and class pairs. A sidecar cannot say both.
+    #
+    # `X-Package: <id>` makes the patch a PART OF THAT PACKAGE in packages.json
+    # instead of a row of its own: it is hosted in files\ like any patch, gets
+    # no manifest item, stays out of the drop-in zip, and the Packages block
+    # below adds it to the package's parts with its size and hash. comfyfixes
+    # was the first, 2026-10-06: patch-Q rides with Reforged World and patch-R
+    # with Characters and gear, because each holds fixed copies of that pack's
+    # models and must never reach a client without it.
     $note = ''
     $optIn = $false
     $required = $false
+    $package = ''
     $side = Join-Path $Patches ($p.Name + '.txt')
     if (Test-Path -LiteralPath $side) {
         $kept = @()
         foreach ($line in (Get-Content -LiteralPath $side)) {
             if     ("$line" -match '^\s*X-OptIn:\s*1\s*$')    { $optIn = $true }
             elseif ("$line" -match '^\s*X-Required:\s*1\s*$') { $required = $true }
+            elseif ("$line" -match '^\s*X-Package:\s*(\S+)\s*$') { $package = $Matches[1] }
             else   { $kept += $line }
         }
         $note = ($kept -join "`n").Trim()
+    }
+    if ($package) {
+        if ($optIn -or $required) { throw "$($p.Name).txt says X-Package with X-OptIn or X-Required" }
+        if ($p.Name -notmatch '^patch-([A-Za-z])\.mpq$') { throw "$($p.Name).txt says X-Package, but only a patch-<letter>.mpq can be a package part" }
+        $packageParts.Add([pscustomobject]@{
+            package = $package
+            letter  = $Matches[1].ToUpper()
+            size    = $p.Length
+            url     = $BaseUrl + 'files/' + $p.Name
+            sha256  = (Get-FileHash -LiteralPath $p.FullName -Algorithm SHA256).Hash.ToLower()
+            file    = $p.Name
+        }) > $null
+        Write-Item ("{0,-18} {1}  part of {2}" -f $p.Name, (Format-Size $p.Length), $package)
+        continue
     }
     if ($optIn -and $required) { throw "$($p.Name).txt says both X-OptIn and X-Required" }
     if ($optIn) { $optInPatches[$p.Name] = $true }
@@ -434,7 +459,7 @@ foreach ($addon in $found) {
         Write-Item ("{0,-18} unlisted, not bundled" -f $addon.Name)
     }
 }
-$bundledPatches = @($patchFiles | Where-Object { -not $optInPatches[$_.Name] })
+$bundledPatches = @($patchFiles | Where-Object { -not $optInPatches[$_.Name] -and -not ($packageParts | Where-Object file -eq $_.Name) })
 foreach ($p in $patchFiles) {
     if ($optInPatches[$p.Name]) {
         Write-Item ("{0,-18} opt-in, not bundled" -f $p.Name)
@@ -714,6 +739,17 @@ if (Test-Path -LiteralPath $packagesFile) {
     $ids = @{}
     foreach ($sec in @($packages.sections)) {
         foreach ($pkg in @($sec.packages)) { if ($ids.ContainsKey($pkg.id)) { throw "packages.json: id '$($pkg.id)' is used twice." }; $ids[$pkg.id] = $true }
+    }
+    # The X-Package patches from the Patches block, added to their package's
+    # parts here so that packages.json never holds a size or hash that a
+    # rebuild of the patch would make stale.
+    foreach ($pp in $packageParts) {
+        $pkg = @($packages.sections | ForEach-Object { $_.packages } | Where-Object { $_.id -eq $pp.package })
+        if ($pkg.Count -ne 1) { throw "$($pp.file).txt says X-Package: $($pp.package), which is no package in packages.json." }
+        $pkg = $pkg[0]
+        if ($pkg.choices) { throw "$($pp.file).txt: '$($pp.package)' has choices, and X-Package adds to plain parts only." }
+        if (@($pkg.parts | Where-Object { "$($_.letter)" -ieq $pp.letter })) { throw "$($pp.file).txt: '$($pp.package)' already has a patch-$($pp.letter)." }
+        $pkg.parts = @($pkg.parts) + [pscustomobject][ordered]@{ letter = $pp.letter; size = $pp.size; url = $pp.url; sha256 = $pp.sha256 }
     }
     $modFiles = @($mods | ForEach-Object { 'mod:' + $_.file })
     $count = 0
