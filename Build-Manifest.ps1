@@ -337,7 +337,7 @@ foreach ($s in @(Get-ChildItem -LiteralPath $Patches -Filter '*.txt' -File -Erro
     if ($s.Name -eq 'README.txt') { continue }
     $for = Join-Path $Patches ([IO.Path]::GetFileNameWithoutExtension($s.Name))
     if (-not (Test-Path -LiteralPath $for)) {
-        throw "$($s.Name) has no patch beside it. Build it first (patch-V: node tools/model-browser/build-patch-v.js)."
+        throw "$($s.Name) has no patch beside it. Build it first, from comfy-wow's root: node patches/build-patch-v.js for patch-V, node patches/build-reforged-fixes.js for patch-Q and patch-R."
     }
 }
 
@@ -362,8 +362,8 @@ foreach ($p in $patchFiles) {
     # `X-Package: <id>` makes the patch a PART OF THAT PACKAGE in packages.json
     # instead of a row of its own: it is hosted in files\ like any patch, gets
     # no manifest item, stays out of the drop-in zip, and the Packages block
-    # below adds it to the package's parts with its size and hash. comfyfixes
-    # was the first, 2026-10-06: patch-Q rides with Reforged World and patch-R
+    # below adds it to the package's parts with its size and hash. The Reforged
+    # fixes were the first, 2026-10-06: patch-Q rides with Reforged World and patch-R
     # with Characters and gear, because each holds fixed copies of that pack's
     # models and must never reach a client without it.
     $note = ''

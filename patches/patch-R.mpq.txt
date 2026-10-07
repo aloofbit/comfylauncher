@@ -1,2 +1,2 @@
-Comfy Reforged fixes: Characters and gear models with their culling box corrected (github.com/aloofbit/comfyfixes)
+Comfy Reforged fixes: Characters and gear models with their culling box corrected
 X-Package: reforged-characters

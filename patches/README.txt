@@ -12,15 +12,16 @@
 #   X-Package: <id>  no row of its own: the patch becomes a part of that
 #                  package in lists/packages.json, with its size and hash
 #                  filled in by the build, and stays out of ComfyCraft.zip.
-#                  patch-Q and patch-R (comfyfixes) ride with Reforged
-#                  World and Characters and gear this way. Build them with
-#                  node ../mods/comfyfixes/build.js --data <Data> --out patches
+#                  patch-Q and patch-R ride with Reforged World and
+#                  Characters and gear this way.
 #
 # patch-V.mpq is ours and REQUIRED. Its sidecar is tracked; the .mpq is not,
-# because it is rebuilt from the client's own files. Build it before
-# Build-Manifest.ps1, which stops if a sidecar has no patch beside it:
+# because it is rebuilt from the client's own files. So are patch-Q and
+# patch-R. Build them before Build-Manifest.ps1, which stops if a sidecar has
+# no patch beside it. From comfy-wow's root:
 #
-#   node tools/model-browser/build-patch-v.js
+#   node patches/build-patch-v.js
+#   node patches/build-reforged-fixes.js
 #
 # Until 2026-09-23 patch-V.mpq was something else: a silent login track,
 # opt-in, 1.6 KB and tracked. The letter was reused for the required patch, so
