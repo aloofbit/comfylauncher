@@ -193,6 +193,7 @@ namespace ComfyLauncher
                 var row = Add("Mods", RowKind.Required, label, note);
                 row.Id = "item:" + name;
                 row.StateKey = name;
+                row.Recorded = have != "";
                 row.Version = item.Str("version");
                 row.Supersedes.AddRange(item.Strs("supersedes").Where(Safe.IsName));
                 row.Have = h;
@@ -292,7 +293,7 @@ namespace ComfyLauncher
                     // not gone: switching the mod on moves it back.
                     bool gone = list.Any(p => p.Type == PartType.Addon
                                               ? !Directory.Exists(client.AddonPath(p.Name))
-                                                && !(p.OffWithMod && Directory.Exists(Path.Combine(home, "set-aside", "AddOns", p.Name)))
+                                                && !(p.OffWithMod && client.AsideAddons.ContainsKey(p.Name))
                                             : p.Type == PartType.File && !File.Exists(client.PathOf(p.Name)));
                     if (gone) row.Have = Have.Missing;
                 }
@@ -434,7 +435,7 @@ namespace ComfyLauncher
                     row.Unknown = row.Toggle = true;
                     row.Have = Have.Aside;
                     row.PartList.Add(new Part { Type = PartType.Patch, Letter = a.Letter, Size = a.Size });
-                    row.Parts = @"ComfyLauncher\set-aside\Data\" + Path.GetFileName(a.Path);
+                    row.Parts = client.Rel(a.Path);
                 }
                 foreach (var p in oddPatches)
                 {
@@ -481,8 +482,7 @@ namespace ComfyLauncher
             // aside with its switched-off mod shows here too, under the mod's
             // tick, and not as the player's own: ticking it alone would bring
             // it back without the DLL it needs.
-            string aside = Path.Combine(home, @"set-aside\AddOns");
-            var setAside = Directory.Exists(aside) ? new DirectoryInfo(aside).GetDirectories().Select(d => d.Name).ToList() : new List<string>();
+            var setAside = client.AsideAddons.Keys.ToList();
             bool OwnedAside(string folder) => app.Rows.Any(r => r.PartList.Any(p => p.OffWithMod && p.Name.Equals(folder, StringComparison.OrdinalIgnoreCase)));
             var owned = claimedAddons.Where(c => client.AddOns.Any(a => a.Equals(c.Folder, StringComparison.OrdinalIgnoreCase))
                                                  || (c.Owner.On && !c.OwnerName.Contains("replaced"))
@@ -514,7 +514,7 @@ namespace ComfyLauncher
                     var row = Add("Addons", RowKind.Check, a);
                     row.Unknown = true; row.On = false; row.Have = Have.Aside;
                     row.PartList.Add(new Part { Type = PartType.Addon, Name = a });
-                    row.Parts = @"Interface\AddOns\" + a;
+                    row.Parts = client.Rel(client.AsideAddons[a]);
                 }
             }
 
@@ -544,7 +544,7 @@ namespace ComfyLauncher
         }
 
         // THE DXVK ROW, from packages.json's `dxvk`. Each build is known by the
-        // hash of its file, on the disk or in set-aside\dxvk. A build with no
+        // hash of its file, on the disk or set aside as d3d9.dll.old. A build with no
         // url is offered only while its file is here, since it cannot be
         // fetched again; a file no build knows is the player's own, and is
         // offered the same way. Unticked with a file set aside is Off, and
@@ -570,13 +570,16 @@ namespace ComfyLauncher
 
             string live = client.PathOf(file);
             Build onDisk = File.Exists(live) ? Match(Client.Sha256(live)) : null;
+            // Beside the exe as d3d9.dll.old, or, from before 2026-10-06, in
+            // set-aside\dxvk\<build>.
+            var asideFiles = client.AsideFiles(file);
             string asideDir = Path.Combine(home, "set-aside", "dxvk");
-            if (Directory.Exists(asideDir))
-                foreach (var a in Directory.GetFiles(asideDir, file, SearchOption.AllDirectories))
-                {
-                    var b = Match(Client.Sha256(a));
-                    if (b.Aside == null) b.Aside = a;
-                }
+            if (Directory.Exists(asideDir)) asideFiles.AddRange(Directory.GetFiles(asideDir, file, SearchOption.AllDirectories));
+            foreach (var a in asideFiles)
+            {
+                var b = Match(Client.Sha256(a));
+                if (b.Aside == null) b.Aside = a;
+            }
 
             var builds = known.Where(b => b.Url != "" || b == onDisk || b.Aside != null).Concat(own).ToList();
             if (builds.Count == 0) return null;

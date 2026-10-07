@@ -27,21 +27,81 @@ namespace ComfyLauncher
         public bool HasDllsFile;
         public Dictionary<char, DiskPatch> Patches = new Dictionary<char, DiskPatch>();
 
-        // Patches the launcher set aside, in its own folder. Known by size,
-        // like the live ones, so switching back is a move, not a download.
+        // WHAT THE LAUNCHER SET ASIDE, NEXT TO WHAT IT REPLACED, since
+        // 2026-10-06: Data\patch-X.mpq.old, Interface\AddOns\<name>.old,
+        // d3d9.dll.old. The game reads none of them: a patch and a DLL only by
+        // their exact names, an addon only from a folder holding a .toc of
+        // the folder's own name. They used to go to ComfyLauncher\set-aside\,
+        // where a player who deleted the live copy by hand was left with a
+        // row nobody could explain. That folder is still read, so whatever
+        // went there before the change still comes back.
+        //
+        // Patches are known by size, like the live ones, so switching back
+        // is a move, not a download.
         public List<DiskPatch> AsidePatches = new List<DiskPatch>();
+
+        // Addon folders set aside, by the addon's name. The first found wins.
+        public Dictionary<string, string> AsideAddons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        const string OldTail = @"(?: \(\d+\))?";
 
         public void ReadAside(string home)
         {
             AsidePatches.Clear();
-            string dir = System.IO.Path.Combine(home, @"set-aside\Data");
-            if (!Directory.Exists(dir)) return;
-            foreach (var f in new DirectoryInfo(dir).GetFiles())
+            void From(string dir, string pattern)
             {
-                var m = Regex.Match(f.Name, @"^patch-([A-Za-z])", RegexOptions.IgnoreCase);
-                if (m.Success) AsidePatches.Add(new DiskPatch { Letter = char.ToUpperInvariant(m.Groups[1].Value[0]), Path = f.FullName, Size = f.Length });
+                if (!Directory.Exists(dir)) return;
+                foreach (var f in new DirectoryInfo(dir).GetFiles())
+                {
+                    var m = Regex.Match(f.Name, pattern, RegexOptions.IgnoreCase);
+                    if (m.Success) AsidePatches.Add(new DiskPatch { Letter = char.ToUpperInvariant(m.Groups[1].Value[0]), Path = f.FullName, Size = f.Length });
+                }
             }
+            From(PathOf("Data"), @"^patch-([A-Za-z])" + OldTail + @"\.mpq\.old$");
+            From(System.IO.Path.Combine(home, @"set-aside\Data"), @"^patch-([A-Za-z])");
+
+            AsideAddons.Clear();
+            void Folders(string dir, string pattern)
+            {
+                if (!Directory.Exists(dir)) return;
+                foreach (var d in new DirectoryInfo(dir).GetDirectories())
+                {
+                    var m = Regex.Match(d.Name, pattern, RegexOptions.IgnoreCase);
+                    if (m.Success && !AsideAddons.ContainsKey(m.Groups[1].Value)) AsideAddons[m.Groups[1].Value] = d.FullName;
+                }
+            }
+            Folders(PathOf(@"Interface\AddOns"), @"^(.+?)" + OldTail + @"\.old$");
+            Folders(System.IO.Path.Combine(home, @"set-aside\AddOns"), @"^(.+?)" + OldTail + "$");
         }
+
+        // Files set aside beside the live one, for the DXVK row: d3d9.dll.old,
+        // d3d9 (2).dll.old and on.
+        public List<string> AsideFiles(string file)
+        {
+            string pattern = "^" + Regex.Escape(System.IO.Path.GetFileNameWithoutExtension(file)) + OldTail
+                           + Regex.Escape(System.IO.Path.GetExtension(file)) + @"\.old$";
+            return new DirectoryInfo(Root).GetFiles().Where(f => Regex.IsMatch(f.Name, pattern, RegexOptions.IgnoreCase))
+                                                    .Select(f => f.FullName).ToList();
+        }
+
+        // A FREE .old NAME beside a file or folder inside the client:
+        // Data\patch-T.mpq gives Data\patch-T.mpq.old, then patch-T (2).mpq.old.
+        // A folder keeps its whole name: Bagnon.old, then Bagnon (2).old.
+        // Never one already there.
+        public string OldName(string relative, bool folder)
+        {
+            string path = PathOf(relative);
+            string dir = System.IO.Path.GetDirectoryName(path);
+            string name = System.IO.Path.GetFileName(path);
+            string stem = folder ? name : System.IO.Path.GetFileNameWithoutExtension(name);
+            string ext = folder ? "" : System.IO.Path.GetExtension(name);
+            string old = System.IO.Path.Combine(dir, name + ".old");
+            for (int i = 2; File.Exists(old) || Directory.Exists(old); i++)
+                old = System.IO.Path.Combine(dir, stem + " (" + i + ")" + ext + ".old");
+            return old;
+        }
+
+        public string AsideName(char letter) => OldName(@"Data\patch-" + letter + ".mpq", false);
         public List<string> AddOns = new List<string>();
         public string Realm = "";
         public string Patchlist = "";
@@ -90,6 +150,10 @@ namespace ComfyLauncher
         // Inside the client or refused: see Safe.
         public string PathOf(string relative) => Safe.Join(Root, relative);
 
+        // A full path as the screen shows it: inside the client, from its root.
+        public string Rel(string full) =>
+            full.StartsWith(Root + "\\", StringComparison.OrdinalIgnoreCase) ? full.Substring(Root.Length + 1) : full;
+
         // Interface\AddOns\<name>, for a name that is one plain folder name.
         public string AddonPath(string name) => Safe.Join(Root, @"Interface\AddOns\" + Safe.Name(name));
 
@@ -131,6 +195,7 @@ namespace ComfyLauncher
                 c.AddOns = new DirectoryInfo(addons).GetDirectories()
                     .Select(d => d.Name)
                     .Where(n => !n.StartsWith("Blizzard_", StringComparison.OrdinalIgnoreCase))
+                    .Where(n => !n.EndsWith(".old", StringComparison.OrdinalIgnoreCase))
                     .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 

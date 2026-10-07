@@ -230,7 +230,10 @@ namespace ComfyLauncher
             }
 
             var before = app.Rows.Where(r => r.On).ToList();
-            var unticked = app.TickOn(row);
+            // The choice on screen: a row off with a build set aside shows
+            // that build, and Space brings it back rather than fetching the
+            // first one (DXVK went from Turtle's own build to stock 2.7.1).
+            var unticked = app.TickOn(row, row.Choice);
             var added = app.Rows.Where(r => r.On && r != row && !before.Contains(r)).Select(r => r.Label).ToList();
             var said = new List<string>();
             if (added.Count > 0) said.Add("also ticked " + string.Join(", ", added));

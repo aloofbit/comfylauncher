@@ -19,19 +19,19 @@ namespace ComfyLauncher
 
     static class Operations
     {
-        const string AsideDir = "set-aside";
+        static string Rel(App app, string full) => app.Client.Rel(full);
 
-        static string Rel(App app, string full) =>
-            full.StartsWith(app.Client.Root + "\\", StringComparison.OrdinalIgnoreCase) ? full.Substring(app.Client.Root.Length + 1) : full;
-
-        // A free name in a folder: "name", then "name (2)" and on. Setting
-        // something aside never overwrites what was set aside before.
-        static string Free(string dir, string name)
+        // SETTING SOMETHING ASIDE is a rename to a free .old name beside it
+        // (Client.OldName), never over what was set aside before.
+        static Op Aside(App app, string relative, bool folder, string why = "")
         {
-            string path = Safe.Join(dir, Safe.Name(name));
-            for (int i = 2; File.Exists(path) || Directory.Exists(path); i++)
-                path = Path.Combine(dir, Path.GetFileNameWithoutExtension(name) + " (" + i + ")" + Path.GetExtension(name));
-            return path;
+            var c = app.Client;
+            string from = c.PathOf(relative);
+            return new Op
+            {
+                Text = "rename " + relative + " to " + Rel(app, c.OldName(relative, folder)) + why,
+                Run = _ => { if (folder) Directory.Move(from, c.OldName(relative, true)); else File.Move(from, c.OldName(relative, false)); },
+            };
         }
 
         public static List<Op> For(App app, Row row)
@@ -40,7 +40,6 @@ namespace ComfyLauncher
             var ops = new List<Op>();
             var c = app.Client;
             string action = row.Action;
-            string aside = Path.Combine(app.Home, AsideDir);
             string downloads = Path.Combine(app.Home, "downloads");
 
             if (row.Kind == RowKind.Radio)
@@ -105,21 +104,29 @@ namespace ComfyLauncher
                     case "change":
                         if (p.Type == PartType.Patch)
                         {
+                            // AN UPDATE OF WHAT THIS LAUNCHER PUT THERE DELETES THE
+                            // OLD COPY, after the new one is checked: an old build
+                            // of our own patch is no use to anybody, and setting
+                            // each one aside piled up patch-V (2), (3) and on
+                            // (2026-10-06). Unrecorded, it may be somebody's.
+                            bool replace = action == "update" && row.Recorded;
                             // A DIFFERENT FILE UNDER THE SAME LETTER GOES ASIDE
                             // FIRST, never under the new one: it may be the only
                             // copy of somebody's patch.
-                            if (c.Patches.TryGetValue(p.Letter, out var old) && old.Size != p.Size)
+                            if (!replace && c.Patches.TryGetValue(p.Letter, out var old) && old.Size != p.Size)
                             {
                                 string oldPath = old.Path;
-                                ops.Add(new Op { Text = "move " + Rel(app, oldPath) + " to " + AsideDir + @"\Data",
-                                    Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "Data")); File.Move(oldPath, Free(Path.Combine(aside, "Data"), Path.GetFileName(oldPath))); } });
+                                char letter = p.Letter;
+                                ops.Add(new Op { Text = "rename " + Rel(app, oldPath) + " to " + Rel(app, c.AsideName(letter)),
+                                    Run = _ => File.Move(oldPath, c.AsideName(letter)) });
                             }
                             var part = p;
                             ops.Add(new Op
                             {
-                                Text = part.ZipOffset >= 0
+                                Text = (part.ZipOffset >= 0
                                     ? "download " + View.Size(part.Size / 1024.0) + " from byte " + part.ZipOffset.ToString("N0") + " of the zip to " + Rel(app, patch)
-                                    : "download " + View.Size(part.Size / 1024.0) + " from " + part.Url + " to " + Rel(app, patch),
+                                    : "download " + View.Size(part.Size / 1024.0) + " from " + part.Url + " to " + Rel(app, patch))
+                                    + (replace && c.Patches.ContainsKey(part.Letter) ? ", over the old one" : ""),
                                 Bytes = part.Size,
                                 Run = progress =>
                                 {
@@ -142,9 +149,8 @@ namespace ComfyLauncher
                                     foreach (var there in new[] { patch, patch + ".off" })
                                     {
                                         if (!File.Exists(there)) continue;
-                                        if (new FileInfo(there).Length == part.Size) { File.Delete(there); continue; }
-                                        Directory.CreateDirectory(Path.Combine(aside, "Data"));
-                                        File.Move(there, Free(Path.Combine(aside, "Data"), Path.GetFileName(there)));
+                                        if (new FileInfo(there).Length == part.Size || (replace && there == patch)) { File.Delete(there); continue; }
+                                        File.Move(there, c.AsideName(part.Letter));
                                     }
                                     File.Move(tmp, patch);
                                 },
@@ -186,12 +192,9 @@ namespace ComfyLauncher
                             string file = p.Name;
                             ops.Add(new Op { Text = "dlls.txt: add " + file, Run = _ => SetDlls(c, new[] { file }, new string[0]) });
                         }
-                        if (p.Type == PartType.Addon && p.OffWithMod && !Directory.Exists(addon))
-                        {
-                            string from = Safe.Join(Path.Combine(aside, "AddOns"), Safe.Name(p.Name));
-                            ops.Add(new Op { Text = "move " + AsideDir + @"\AddOns\" + p.Name + " back to " + Rel(app, addon),
-                                Run = _ => { if (Directory.Exists(from)) Directory.Move(from, addon); } });
-                        }
+                        if (p.Type == PartType.Addon && p.OffWithMod && !Directory.Exists(addon) && c.AsideAddons.TryGetValue(p.Name, out var offFrom))
+                            ops.Add(new Op { Text = "move " + Rel(app, offFrom) + " back to " + Rel(app, addon),
+                                Run = _ => { if (Directory.Exists(offFrom)) Directory.Move(offFrom, addon); } });
                         break;
 
                     case "disable":
@@ -205,25 +208,17 @@ namespace ComfyLauncher
                         // AN ADDON THAT COMPLAINS WITHOUT ITS DLL goes aside with
                         // it: SuperAPI shows a popup at every login otherwise.
                         if (p.Type == PartType.Addon && p.OffWithMod && Directory.Exists(addon))
-                        {
-                            var part = p;
-                            ops.Add(new Op { Text = "move " + Rel(app, addon) + " to " + AsideDir + @"\AddOns",
-                                Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "AddOns")); Directory.Move(addon, Free(Path.Combine(aside, "AddOns"), part.Name)); } });
-                        }
+                            ops.Add(Aside(app, Rel(app, addon), true));
                         break;
 
                     case "set aside":
                         if (p.Type == PartType.Addon)
-                            ops.Add(new Op { Text = "move " + Rel(app, addon) + " to " + AsideDir + @"\AddOns",
-                                Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "AddOns")); Directory.Move(addon, Free(Path.Combine(aside, "AddOns"), p.Name)); } });
+                            ops.Add(Aside(app, Rel(app, addon), true));
                         break;
 
                     case "restore":
-                        if (p.Type == PartType.Addon)
-                        {
-                            string from = Safe.Join(Path.Combine(aside, "AddOns"), Safe.Name(p.Name));
-                            ops.Add(new Op { Text = "move " + AsideDir + @"\AddOns\" + p.Name + " back to " + Rel(app, addon), Run = _ => Directory.Move(from, addon) });
-                        }
+                        if (p.Type == PartType.Addon && c.AsideAddons.TryGetValue(p.Name, out var from))
+                            ops.Add(new Op { Text = "move " + Rel(app, from) + " back to " + Rel(app, addon), Run = _ => Directory.Move(from, addon) });
                         if (p.Type == PartType.Patch)
                         {
                             // Back under its letter, and whatever holds that
@@ -233,11 +228,12 @@ namespace ComfyLauncher
                             if (c.Patches.TryGetValue(p.Letter, out var now))
                             {
                                 string nowPath = now.Path;
-                                ops.Add(new Op { Text = "move " + Rel(app, nowPath) + " to " + AsideDir + @"\Data",
-                                    Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "Data")); File.Move(nowPath, Free(Path.Combine(aside, "Data"), Path.GetFileName(nowPath))); } });
+                                char letter = p.Letter;
+                                ops.Add(new Op { Text = "rename " + Rel(app, nowPath) + " to " + Rel(app, c.AsideName(letter)),
+                                    Run = _ => File.Move(nowPath, c.AsideName(letter)) });
                             }
                             string backPath = back.Path;
-                            ops.Add(new Op { Text = "move " + AsideDir + @"\Data\" + Path.GetFileName(backPath) + " back to " + Rel(app, patch),
+                            ops.Add(new Op { Text = "move " + Rel(app, backPath) + " back to " + Rel(app, patch),
                                 Run = _ => File.Move(backPath, patch) });
                         }
                         break;
@@ -274,8 +270,7 @@ namespace ComfyLauncher
                 {
                     string dead = c.AddonPath(old);
                     if (!Directory.Exists(dead)) continue;
-                    ops.Add(new Op { Text = "move " + Rel(app, dead) + " to " + AsideDir + @"\AddOns, now part of " + row.Label,
-                        Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "AddOns")); Directory.Move(dead, Free(Path.Combine(aside, "AddOns"), old)); } });
+                    ops.Add(Aside(app, Rel(app, dead), true, ", now part of " + row.Label));
                 }
 
             // The same for the files a mod replaced (2026-10-06), after it is in place: each old DLL leaves dlls.txt,
@@ -287,15 +282,14 @@ namespace ComfyLauncher
                     if (c.DllEnabled(name))
                         ops.Add(new Op { Text = "dlls.txt: take out " + name + ", now part of " + row.Label, Run = _ => SetDlls(c, new string[0], new[] { name }) });
                     if (File.Exists(dead))
-                        ops.Add(new Op { Text = "move " + name + " to " + AsideDir + @"\Mods, now part of " + row.Label,
-                            Run = _ => { Directory.CreateDirectory(Path.Combine(aside, "Mods")); File.Move(dead, Free(Path.Combine(aside, "Mods"), name)); } });
+                        ops.Add(Aside(app, name, false, ", now part of " + row.Label));
                 }
             return ops;
         }
 
         // ---- THE DXVK ROW. The new build is fetched and checked FIRST, so a
         // failed download leaves the old file working. Then the file in place
-        // goes to set-aside\dxvk\<build>, and the chosen one takes its name.
+        // is renamed d3d9.dll.old, and the chosen one takes its name.
         // Nothing is deleted: Turtle's own build cannot be fetched again.
         static List<Op> BuildOps(App app, Row row, Func<Part, Action<long>, string> fetch)
         {
@@ -303,7 +297,6 @@ namespace ComfyLauncher
             var c = app.Client;
             string action = row.Action;
             string live = c.PathOf(row.BuildFile);
-            string asideDir = Path.Combine(app.Home, AsideDir, "dxvk");
             var want = row.Builds[row.Choice];
             bool bring = action == "install" || action == "change" || action == "enable";
             string fresh = Path.Combine(app.Home, "downloads", row.BuildFile + ".new");
@@ -328,26 +321,18 @@ namespace ComfyLauncher
             }
 
             if ((action == "change" || action == "disable") && File.Exists(live))
-            {
-                string key = row.Builds[row.HaveChoice].Name.Replace("'", "").Replace(' ', '-');
-                ops.Add(new Op { Text = "move " + row.BuildFile + " to " + AsideDir + @"\dxvk\" + key,
-                    Run = _ =>
-                    {
-                        string dir = Free(asideDir, key);
-                        Directory.CreateDirectory(dir);
-                        File.Move(live, Path.Combine(dir, row.BuildFile));
-                    } });
-            }
+                ops.Add(Aside(app, row.BuildFile, false, ", DXVK " + row.Builds[row.HaveChoice].Name));
 
             if (bring && want.Aside != null)
             {
                 string from = want.Aside;
-                ops.Add(new Op { Text = "move " + AsideDir + @"\dxvk\" + Path.GetFileName(Path.GetDirectoryName(from)) + @"\" + row.BuildFile + " back to " + row.BuildFile,
+                ops.Add(new Op { Text = "move " + Rel(app, from) + " back to " + row.BuildFile,
                     Run = _ =>
                     {
                         File.Move(from, live);
+                        // A build from before 2026-10-06 sat in a folder of its own.
                         string dir = Path.GetDirectoryName(from);
-                        if (Directory.GetFileSystemEntries(dir).Length == 0) Directory.Delete(dir);
+                        if (!dir.Equals(c.Root, StringComparison.OrdinalIgnoreCase) && Directory.GetFileSystemEntries(dir).Length == 0) Directory.Delete(dir);
                     } });
             }
             else if (bring)

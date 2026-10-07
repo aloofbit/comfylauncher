@@ -21,7 +21,7 @@ namespace ComfyLauncher
 
     // What is on the disk now, which is a different question from what the
     // tick says you want. Aside is a file of the player's own that the
-    // launcher moved to its set-aside folder instead of deleting it.
+    // launcher renamed to .old beside where it was, instead of deleting it.
     // Off is on the disk and switched off: a patch renamed .mpq.off, or a
     // mod whose line is not in dlls.txt.
     enum Have { None, Current, Behind, Missing, Aside, Off }
@@ -77,6 +77,7 @@ namespace ComfyLauncher
         public Have Have;
         public bool Ours;          // ComfyCraft ships it, so Update available covers it
         public bool Unknown;       // on the disk, but no package claims it
+        public bool Recorded;      // the state file says this launcher put it there, so an update deletes the old copy
         public int SizeKb;
         public string Parts = "";  // for the detail line
         public string PartOf;      // Part rows: the package it belongs to
