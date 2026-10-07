@@ -8,6 +8,10 @@
         .\Build-Manifest.ps1
         .\ComfyLauncher.exe --client <a client> --source dist --dry-run
 
+    .\Build-Manifest.ps1 -Local is a local release: the same build, with no
+    GitHub release at the end. A launcher that reads the local website takes
+    the update from its own update button.
+
     RUN FROM comfy-wow\launcher, where this repo is cloned. The addons come from
     comfy-wow's addon\ beside it, so this script builds ComfyCraft's manifest
     and nobody else's.
@@ -54,7 +58,12 @@ param(
     # Keep the launcher's release as it is. Without this, a build whose launcher
     # files differ from the last build raises $LauncherVersion by itself, so
     # installed copies are offered the change. Use it for a change that waits.
-    [switch] $Hold
+    [switch] $Hold,
+
+    # A local release: write dist\ and stop. No commit, no tag, no GitHub
+    # release. The local website serves dist\ at 127.0.0.1:8080/launcher, so a
+    # client whose launcher reads that source is offered the update.
+    [switch] $Local
 )
 
 $ErrorActionPreference = 'Stop'
@@ -952,7 +961,11 @@ if (@($unlistedNames.Keys).Count -gt 0) {
 # launcher's version moved. Last, because it only reads what this build made,
 # and a failure there is a yellow line rather than a stop.
 Write-Head 'Release'
-& (Join-Path $Here 'Publish-Release.ps1') -Zip (Join-Path $Out 'ComfyLauncher.zip')
+if ($Local) {
+    Write-Item ("local only: release {0} is in {1}, not on GitHub" -f $release, $Out)
+} else {
+    & (Join-Path $Here 'Publish-Release.ps1') -Zip (Join-Path $Out 'ComfyLauncher.zip')
+}
 
 Write-Host ''
 Write-Host '  Test it:  launcher\ComfyLauncher.exe --client <a client> --source launcher\dist --dry-run' -ForegroundColor DarkGray

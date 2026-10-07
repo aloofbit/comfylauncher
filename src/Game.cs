@@ -91,6 +91,27 @@ namespace ComfyLauncher
             foreach (var p in stuck) try { p.WaitForExit(5000); } catch { }
         }
 
+        // THE GAME'S HELPERS OUTLIVE IT. The 64 bit Vanilla helpers starts
+        // TextureServer64.exe, which stays after the game closes (measured
+        // 2026-10-07: up since the night before) and holds its own exe, so
+        // switching back to the standard build failed to delete it: "Access
+        // to the path is denied". This client's copies are ended. Call it
+        // only when Running is false: then no game of this client uses them.
+        static readonly string[] Helpers = { "TextureServer64" };
+
+        public static void EndHelpers(Client c)
+        {
+            var ended = new List<Process>();
+            foreach (var name in Helpers)
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    string exe = ImagePath(p.Id);
+                    if (exe == null || !Path.GetDirectoryName(exe).TrimEnd('\\').Equals(c.Root.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) continue;
+                    try { p.Kill(); ended.Add(p); } catch { }
+                }
+            foreach (var p in ended) try { p.WaitForExit(5000); } catch { }
+        }
+
         // VanillaFixes when the client has it, since it loads the mods; then
         // the console hides until the game closes. Steam counts the game as
         // running while this process lives, which is what keeps the overlay.

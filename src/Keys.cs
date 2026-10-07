@@ -187,8 +187,14 @@ namespace ComfyLauncher
                     return;
             }
 
-            bool last = row.Choices == null || row.Choice >= row.Choices.Length - 1;
-            if (row.On && row.Choices != null && !last) { row.Choice++; return; }
+            // THE STEPS GO ROUND FROM THE CHOICE THAT TICKING ON STARTS AT,
+            // the one on the disk, and past the end to the first. Stopping at
+            // the end left every choice before that one out of reach: DXVK
+            // with 2.5.3 on the disk went only between 2.5.3 and off.
+            int start = row.Have == Have.None ? 0 : row.HaveChoice;
+            int next = row.Choices == null ? 0 : (row.Choice + 1) % row.Choices.Length;
+            bool last = row.Choices == null || next == start;
+            if (row.On && !last) { row.Choice = next; return; }
             if (row.On)
             {
                 // Remembered on the row, so ticking it again brings them back.
@@ -436,6 +442,9 @@ namespace ComfyLauncher
             {
                 foreach (var r in app.Rows) r.Failed = null;
                 app.UpdateFailed = false;
+                // The game is closed (checked above), so a texture server
+                // left behind is ended before work can need its exe.
+                if (app.Client != null && steps.Count > 0) Game.EndHelpers(app.Client);
                 foreach (var r in steps)
                     if (r.Kind == RowKind.Radio && app.Client == null) SetRealm(app, r);
                     else app.Work.Enqueue(r);

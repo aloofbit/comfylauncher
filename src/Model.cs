@@ -146,7 +146,8 @@ namespace ComfyLauncher
         public Row Parent;
         public readonly List<Row> Needs = new List<Row>();
 
-        // A PACKAGE WITH VARIANTS: Space steps through off and each choice.
+        // A PACKAGE WITH VARIANTS: Space steps through off and each choice,
+        // starting from the one on the disk and going round past the end.
         // Choice is what the tick wants; HaveChoice is what is on the disk.
         public string[] Choices;
         public int[] ChoiceKb;
