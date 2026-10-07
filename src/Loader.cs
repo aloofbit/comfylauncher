@@ -384,7 +384,14 @@ namespace ComfyLauncher
                         if (found.Count == 0) continue;
                         foreach (var d in found) claimedLetters.Add(d.Letter);
                         row.Choice = row.HaveChoice = i;
-                        if (found.Count < lists[i].Count) { row.Have = Have.Missing; row.On = found.Any(d => d.Enabled); }
+                        if (found.Count < lists[i].Count)
+                        {
+                            row.Have = Have.Missing; row.On = found.Any(d => d.Enabled);
+                            // What a reinstall downloads: the parts not there
+                            // live (Operations skips the rest).
+                            int missingKb = (int)(lists[i].Where(p => !(client.Patches.TryGetValue(p.Letter, out var d) && d.Enabled && d.Size == p.Size)).Sum(p => p.Size) / 1024);
+                            if (row.ChoiceKb != null) row.ChoiceKb[i] = missingKb; else row.SizeKb = missingKb;
+                        }
                         else if (found.All(d => d.Enabled)) { row.Have = Have.Current; row.On = true; }
                         else { row.Have = Have.Off; row.On = false; }
                         break;

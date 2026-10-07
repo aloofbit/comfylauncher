@@ -87,6 +87,13 @@ namespace ComfyLauncher
 
             foreach (var p in row.PartsNowList)
             {
+                // A PACK MISSING A FILE FETCHES THAT FILE. Reinstall is what a
+                // package reads when some of its parts are on the disk at their
+                // exact size, which is how a part is known at all. Fetching
+                // those again cost 4 GB of Reforged World to add comfyfixes'
+                // 5 MB patch-Q (2026-10-06).
+                if (action == "reinstall" && p.Type == PartType.Patch
+                    && c.Patches.TryGetValue(p.Letter, out var live) && live.Enabled && live.Size == p.Size) continue;
                 // Only a patch has a letter; an unset one is \0, which no path may hold.
                 string patch = p.Type == PartType.Patch ? c.PathOf(@"Data\patch-" + p.Letter + ".mpq") : "";
                 string addon = p.Type == PartType.Addon ? c.AddonPath(p.Name) : "";
