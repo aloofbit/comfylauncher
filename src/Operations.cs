@@ -90,8 +90,12 @@ namespace ComfyLauncher
                 // package reads when some of its parts are on the disk at their
                 // exact size, which is how a part is known at all. Fetching
                 // those again cost 4 GB of Reforged World to add comfyfixes'
-                // 5 MB patch-Q (2026-10-06).
-                if (action == "reinstall" && p.Type == PartType.Patch
+                // 5 MB patch-Q (2026-10-06). An update of a package does the
+                // same: a package knows its parts by size alone, so a part at
+                // its pinned size is current. A required item is not skipped: a
+                // rebuilt patch-V can keep its size.
+                bool package = row.Kind == RowKind.Check;
+                if ((action == "reinstall" || (action == "update" && package)) && p.Type == PartType.Patch
                     && c.Patches.TryGetValue(p.Letter, out var live) && live.Enabled && live.Size == p.Size) continue;
                 // Only a patch has a letter; an unset one is \0, which no path may hold.
                 string patch = p.Type == PartType.Patch ? c.PathOf(@"Data\patch-" + p.Letter + ".mpq") : "";
@@ -108,8 +112,12 @@ namespace ComfyLauncher
                             // OLD COPY, after the new one is checked: an old build
                             // of our own patch is no use to anybody, and setting
                             // each one aside piled up patch-V (2), (3) and on
-                            // (2026-10-06). Unrecorded, it may be somebody's.
-                            bool replace = action == "update" && row.Recorded;
+                            // (2026-10-06). Unrecorded, it may be somebody's. A
+                            // package part at a size its `was` lists is an old
+                            // build of ours too; a file of any other size under
+                            // that letter is not, and goes aside.
+                            bool replace = action == "update" && (row.Recorded
+                                || (package && c.Patches.TryGetValue(p.Letter, out var built) && p.Was.Contains(built.Size)));
                             // A DIFFERENT FILE UNDER THE SAME LETTER GOES ASIDE
                             // FIRST, never under the new one: it may be the only
                             // copy of somebody's patch.

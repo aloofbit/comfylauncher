@@ -52,6 +52,16 @@ namespace ComfyLauncher
         public static List<string> Strs(this Dictionary<string, object> d, string key) =>
             (d.Get(key) as IEnumerable)?.OfType<string>().ToList() ?? new List<string>();
 
+        // An array of numbers. A string is IEnumerable too, of its characters, so it is no array here.
+        public static List<long> Longs(this Dictionary<string, object> d, string key)
+        {
+            var list = new List<long>();
+            if (!(d.Get(key) is IEnumerable items) || items is string) return list;
+            foreach (var v in items)
+                if (v != null && !(v is string)) try { list.Add(Convert.ToInt64(v)); } catch { }
+            return list;
+        }
+
         // Written indented, as the .ps1 launcher writes comfylauncher.json,
         // because a person opens that file to edit their realms.
         public static string Write(object value)

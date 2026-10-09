@@ -43,6 +43,7 @@ namespace ComfyLauncher
         public string Etag = "";    // the host's ETag when the size was pinned
         public string Crc32 = "";   // the zip's own check for a stored entry
         public bool OffWithMod;     // an addon that goes aside when its mod is switched off
+        public List<long> Was = new List<long>();  // patches: sizes an earlier pin shipped, which an update replaces
 
         public string Show =>
             Type == PartType.Addon ? "the " + Name + " addon"

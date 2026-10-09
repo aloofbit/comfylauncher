@@ -319,6 +319,7 @@ namespace ComfyLauncher
             // 2026-09-25. The rest are the HD packs, each under its title.
             var needIds = new Dictionary<Row, List<string>>();
             var parentIds = new Dictionary<Row, string>();
+            var packageRows = new List<Row>();
             void Section(Dictionary<string, object> sec)
             {
                 bool ours = sec.Bool("ours");
@@ -330,6 +331,7 @@ namespace ComfyLauncher
                 foreach (var pkg in sec.Objs("packages"))
                 {
                     var row = Add("Mods", RowKind.Check, pkg.Str("name"), pkg.Str("note"));
+                    packageRows.Add(row);
                     row.Id = pkg.Str("id");
                     row.Pack = pack;
                     row.Toggle = true;
@@ -344,7 +346,7 @@ namespace ComfyLauncher
                         Type = PartType.Patch, Letter = char.ToUpperInvariant(p.Str("letter")[0]), Size = p.Long("size"),
                         // Relative for a part Build-Manifest added from patches\ (X-Package).
                         Url = p.Str("url") != "" ? Absolute(manifestUrl, p.Str("url")) : zip, ZipOffset = p.Get("zip") != null ? p.Long("zip") : -1,
-                        Etag = p.Str("etag"), Crc32 = p.Str("crc32"), Sha256 = p.Str("sha256"),
+                        Etag = p.Str("etag"), Crc32 = p.Str("crc32"), Sha256 = p.Str("sha256"), Was = p.Longs("was"),
                     }).ToList();
                     string By(Dictionary<string, object> holder, List<Part> parts) =>
                         ShowParts(parts) + (holder.Str("by") != "" ? ", by " + holder.Str("by") : "");
@@ -382,10 +384,28 @@ namespace ComfyLauncher
                     {
                         var found = lists[i].Where(p => client.Patches.TryGetValue(p.Letter, out var d) && d.Size == p.Size)
                                             .Select(p => client.Patches[p.Letter]).ToList();
-                        if (found.Count == 0) continue;
-                        foreach (var d in found) claimedLetters.Add(d.Letter);
+                        // AN OLDER BUILD OF THE PACKAGE: a part on the disk at a
+                        // size an earlier pin shipped (`was`). The row reads
+                        // update, and the update fetches every part that is not
+                        // current and replaces the old files (2026-10-08, the
+                        // owner's call: comfylogin v0.1.1 sat in clients as
+                        // somebody's own patch-W after the pin moved).
+                        var older = lists[i].Where(p => client.Patches.TryGetValue(p.Letter, out var d) && p.Was.Contains(d.Size))
+                                            .Select(p => client.Patches[p.Letter]).ToList();
+                        if (found.Count == 0 && older.Count == 0) continue;
+                        foreach (var d in found.Concat(older)) claimedLetters.Add(d.Letter);
                         row.Choice = row.HaveChoice = i;
-                        if (found.Count < lists[i].Count)
+                        // Switched off, it stays off: unticked means unwanted, and
+                        // an update does not overrule that. Ticking it switches the
+                        // old build on, and the next start offers the update.
+                        if (older.Count > 0 && !found.Concat(older).Any(d => d.Enabled)) { row.Have = Have.Off; row.On = false; }
+                        else if (older.Count > 0)
+                        {
+                            row.Have = Have.Behind; row.On = true;
+                            int behindKb = (int)(lists[i].Where(p => !(client.Patches.TryGetValue(p.Letter, out var d) && d.Enabled && d.Size == p.Size)).Sum(p => p.Size) / 1024);
+                            if (row.ChoiceKb != null) row.ChoiceKb[i] = behindKb; else row.SizeKb = behindKb;
+                        }
+                        else if (found.Count < lists[i].Count)
                         {
                             row.Have = Have.Missing; row.On = found.Any(d => d.Enabled);
                             // What a reinstall downloads: the parts not there
@@ -466,6 +486,13 @@ namespace ComfyLauncher
             foreach (var kv in needIds)
                 foreach (var id in kv.Value) { var need = ById(id); if (need != null) kv.Key.Needs.Add(need); }
             foreach (var kv in parentIds) kv.Key.Parent = ById(kv.Value);
+
+            // AN UPDATE BRINGS WHAT THE NEW BUILD NEEDS. comfylogin v0.2.1-alpha
+            // needs its DLL, which the v0.1.1-alpha in clients did not, and an
+            // update that left it out would install a patch that shows nothing.
+            foreach (var row in packageRows.Where(r => r.On && r.Have == Have.Behind))
+                foreach (var need in row.AllNeeds.Where(n => !n.On).ToList())
+                    app.TickOn(need, need.Choice);
 
             // ---- Addons: the ones a package owns, then the player's own,
             // then what this launcher set aside.

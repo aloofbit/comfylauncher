@@ -4,6 +4,7 @@
   "_comment3": "Faithful parts carry zip: the Drive zip STORES its patches, and Drive answers range requests, so one patch is fetched as the byte range [offset, offset + size) of the zip. crc32 is the zip's own check for that range.",
 
   "_comment4": "sha256 on a part is checked after the download. ours: the section's rows are drawn under ComfyCraft, with no heading of their own.",
+  "_comment5": "was: sizes of a part that earlier pins shipped. WHEN A PIN MOVES, ADD THE OLD SIZE HERE. A part on the disk at one of them makes the row read update (launcher 1.28): the update fetches every part not at its pinned size, deletes the old files once the new ones pass their checks, and ticks what the package needs. Without it, the old file is somebody's own patch, and the row is refused until the player unticks it.",
 
   "dxvk": {
     "_why": "Added 2026-09-24 for Project Reforged, whose Turtle page asks for DXVK 2.7.1, or 2.5.3 as a fallback: the x32 d3d9.dll beside WoW.exe. It is not a mod in mods.json because it is not a line in dlls.txt; the game loads it by sitting beside the exe. One row, one choice per build. A build is recognised BY THE sha256 OF d3d9.dll, measured 2026-09-24: Turtle ships its own 2.7.1 build (a2cd68..., 4501518 bytes, in octow, clean-turtle and fresh-test), which is not stock 2.7.1 (00ecd4..., in octow - Copy and ravencraft). twow-hd has stock 2.5.3. A build with no url cannot be fetched and is offered only while its file is on the disk or set aside. A file no build knows is offered as the player's own. Switching sets the old file aside, never deletes it. The tarball sha256 came from a curl download and matched three downloads by the launcher; the release pages publish none.",
@@ -36,7 +37,8 @@
           "conflicts": ["patch:Y"],
           "advice": "Passwords are kept in WTF\\comfylogin.txt, encrypted for your Windows user.",
           "parts": [
-            { "letter": "W", "size": 39069, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.1-alpha/comfylogin.zip", "zip": 139434, "crc32": "2d84617d", "sha256": "6b8c20839a49296c091c644aa23daf7bead9f6c7c8e4315e2ce357f755289a6d" }
+            { "letter": "W", "size": 39069, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.1-alpha/comfylogin.zip", "zip": 139434, "crc32": "2d84617d", "sha256": "6b8c20839a49296c091c644aa23daf7bead9f6c7c8e4315e2ce357f755289a6d",
+              "was": [34448, 36464, 40007] }
           ]
         }
       ]
