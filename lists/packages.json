@@ -23,7 +23,7 @@
 
   "sections": [
     {
-      "_why": "comfylogin, our own, since 2026-09-25: saved accounts on the login screen, character order, and an auto login character (github.com/aloofbit/comfylogin). It replaced paokkerkir/vanilla-autologin 3.0.2, the owner's pick of 2026-09-24, whose look the owner did not like. It is a patch (W) and not a mod, so it lives here, but ours draws it under ComfyCraft. Optional because it needs Nampower. It loads from its own copy of MovieFrame.xml, so it no longer needs patch-V. A client that still has paokkerkir's patch-Y lists it under Also in this client, and comfylogin stays hidden until that row is unticked.",
+      "_why": "comfylogin, our own, since 2026-09-25: saved accounts on the login screen, character order, and an auto login character (github.com/aloofbit/comfylogin). It replaced paokkerkir/vanilla-autologin 3.0.2, the owner's pick of 2026-09-24, whose look the owner did not like. It is a patch (W) and not a mod, so it lives here, but ours draws it under ComfyCraft. Optional because it needs a DLL. It loads from its own copy of MovieFrame.xml, so it no longer needs patch-V. Since v0.2.0-alpha it has its own DLL, comfylogin.dll (the Saved accounts DLL row in mods.json), which keeps the list in WTF\\comfylogin.txt with DPAPI passwords. v0.2.1-alpha (pinned 2026-10-08) dropped Nampower and Imports\\logins.txt, so the patch without the DLL shows no list. That release ships one zip, which stores its files, so patch-W is fetched as a byte range of it: offset and crc32 read from the zip, sha256 our own. A ranged request through GitHub's redirect, with the HttpWebRequest the launcher uses, gave a 206 with that sha256. A client that still has paokkerkir's patch-Y lists it under Also in this client, and comfylogin stays hidden until that row is unticked.",
       "title": "Saved accounts",
       "pack": "ComfyCraft",
       "ours": true,
@@ -32,11 +32,11 @@
           "id": "comfylogin",
           "name": "Saved accounts",
           "note": "your accounts on the login screen, with auto login",
-          "needs": ["mod:nampower.dll"],
+          "needs": ["mod:comfylogin.dll"],
           "conflicts": ["patch:Y"],
-          "advice": "Passwords are kept in Imports\\logins.txt, as plain text unless WOW_ENCRYPTION_KEY is set.",
+          "advice": "Passwords are kept in WTF\\comfylogin.txt, encrypted for your Windows user.",
           "parts": [
-            { "letter": "W", "size": 36464, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.1.1-alpha/patch-W.mpq", "sha256": "e280e7263b2e0f470f7e80840e7523fefd9cada4de3279e1446943b4fc764583" }
+            { "letter": "W", "size": 39069, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.1-alpha/comfylogin.zip", "zip": 139434, "crc32": "2d84617d", "sha256": "6b8c20839a49296c091c644aa23daf7bead9f6c7c8e4315e2ce357f755289a6d" }
           ]
         }
       ]

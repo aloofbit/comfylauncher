@@ -297,5 +297,19 @@
       "comfyaim.dll": "comfyaim.dll",
       "Interface/AddOns/ComfyAim/": "Interface/AddOns/ComfyAim/"
     }
+  },
+  {
+    "_why": "Added 2026-10-08: comfylogin's DLL. The Saved accounts row in packages.json brings patch-W and needs this row. The DLL keeps the list in WTF\\comfylogin.txt, encrypts the passwords with DPAPI, and turns off the stock exe's GlueXML check. The release asset is one zip with comfylogin.dll and Data/patch-W.mpq; only the DLL is taken here, and the package row takes the patch. The pin is our own hash of the asset, and it matched the digest GitHub publishes for it.",
+    "name": "Saved accounts DLL",
+    "file": "comfylogin.dll",
+    "note": "keeps the saved accounts list and its passwords",
+    "version": "v0.2.1-alpha",
+    "from": "https://github.com/aloofbit/comfylogin",
+    "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.1-alpha/comfylogin.zip",
+    "sha256": "c39f126d14435185ce2b9bf54c7bec8e3f6fa54c5d6f6ad04a2ef5175879608d",
+    "file_sha256": "48f29234d4153fe9caab18b6bd2f3ef7e254042782d645d09345b37bef8ad72e",
+    "extract": {
+      "comfylogin.dll": "comfylogin.dll"
+    }
   }
 ]
