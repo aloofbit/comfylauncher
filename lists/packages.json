@@ -24,7 +24,7 @@
 
   "sections": [
     {
-      "_why": "comfylogin, our own, since 2026-09-25: saved accounts on the login screen, character order, and an auto login character (github.com/aloofbit/comfylogin). It replaced paokkerkir/vanilla-autologin 3.0.2, the owner's pick of 2026-09-24, whose look the owner did not like. It is a patch (W) and not a mod, so it lives here, but ours draws it under ComfyCraft. Optional because it needs a DLL. It loads from its own copy of MovieFrame.xml, so it no longer needs patch-V. Since v0.2.0-alpha it has its own DLL, comfylogin.dll (the Saved accounts DLL row in mods.json), which keeps the list in WTF\\comfylogin.txt with DPAPI passwords. v0.2.1-alpha (pinned 2026-10-08) dropped Nampower and Imports\\logins.txt, so the patch without the DLL shows no list. That release ships one zip, which stores its files, so patch-W is fetched as a byte range of it: offset and crc32 read from the zip, sha256 our own. A ranged request through GitHub's redirect, with the HttpWebRequest the launcher uses, gave a 206 with that sha256. A client that still has paokkerkir's patch-Y lists it under Also in this client, and comfylogin stays hidden until that row is unticked.",
+      "_why": "comfylogin, our own, since 2026-09-25: saved accounts on the login screen, character order, and an auto login character (github.com/aloofbit/comfylogin). It replaced paokkerkir/vanilla-autologin 3.0.2, the owner's pick of 2026-09-24, whose look the owner did not like. It is a patch (W) and not a mod, so it lives here, but ours draws it under ComfyCraft. Optional because it needs a DLL. It loads from its own copy of MovieFrame.xml, so it no longer needs patch-V. Since v0.2.0-alpha it has its own DLL, comfylogin.dll (the Saved accounts DLL row in mods.json), which keeps the list in WTF\\comfylogin.txt with DPAPI passwords. v0.2.1-alpha (pinned 2026-10-08) dropped Nampower and Imports\\logins.txt, so the patch without the DLL shows no list. v0.2.2-alpha (pinned 2026-10-09) logs a typed password in through the DLL and shows an error when WTF cannot be written; it needs the DLL of the same release. That release ships one zip, which stores its files, so patch-W is fetched as a byte range of it: offset and crc32 read from the zip, sha256 our own. A ranged request through GitHub's redirect, with the HttpWebRequest the launcher uses, gave a 206 with that sha256. A client that still has paokkerkir's patch-Y lists it under Also in this client, and comfylogin stays hidden until that row is unticked.",
       "title": "Saved accounts",
       "pack": "ComfyCraft",
       "ours": true,
@@ -37,8 +37,8 @@
           "conflicts": ["patch:Y"],
           "advice": "Passwords are kept in WTF\\comfylogin.txt, encrypted for your Windows user.",
           "parts": [
-            { "letter": "W", "size": 39069, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.1-alpha/comfylogin.zip", "zip": 139434, "crc32": "2d84617d", "sha256": "6b8c20839a49296c091c644aa23daf7bead9f6c7c8e4315e2ce357f755289a6d",
-              "was": [34448, 36464, 40007] }
+            { "letter": "W", "size": 42751, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.2-alpha/comfylogin.zip", "zip": 144554, "crc32": "56aedd0b", "sha256": "7265500fcc30cbb7f535e442b4f4ea4c30c8bb704aec57ff2ecc825ca12594fd",
+              "was": [34448, 36464, 39069, 40007] }
           ]
         }
       ]
