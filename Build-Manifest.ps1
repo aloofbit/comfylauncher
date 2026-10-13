@@ -109,7 +109,9 @@ $Supersedes = @{
     # where it was, the entry would have gone out with the addon and taken the
     # only mention of ComfyBots with it.
     'ComfyUI' = @('ComfyInvasion', 'ComfyNPC', 'ComfyNoShop',
-                  'ComfyMute', 'ComfyCompanions', 'ComfyQuiet', 'ComfyBots')
+                  'ComfyMute', 'ComfyCompanions', 'ComfyQuiet', 'ComfyBots',
+                  # The owner's ClearChat, 2026-10-10: /togglechat and /clear both moved in.
+                  'ClearChat')
 }
 
 if ($LoadOnly) { return }
