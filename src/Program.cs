@@ -65,6 +65,11 @@ namespace ComfyLauncher
             if (args.Contains("--sample")) app = App.Sample();
             else
             {
+                // A start that shows a window says what it is doing while the
+                // window is still blank, and logs how long each step took.
+                bool live = !args.Contains("--keys") && !args.Contains("--dump");
+                StartLog.Begin(live);
+                StartLog.Say("ComfyCraft Launcher " + SelfUpdate.Version + ": loading");
                 if (!args.Contains("--keys")) SelfUpdate.CleanUp();
                 string error;
                 app = LoadReal(Arg("--client") ?? positional, Arg("--home"), Arg("--source") ?? Arg("-Source"), Arg("--packages"), out error);
@@ -141,6 +146,9 @@ namespace ComfyLauncher
             string stateFile = System.IO.Path.Combine(home, "comfylauncher.json");
             try { if (System.IO.File.Exists(stateFile)) state = Json.Parse(System.IO.File.ReadAllText(stateFile)) ?? state; }
             catch (Exception e) { error = stateFile + " could not be read: " + e.Message; return null; }
+            StartLog.Step("read " + stateFile);
+
+            StartLog.Say("Reading the client.");
 
             string root = clientArg != null ? Client.Resolve(clientArg) : Client.FindNear(exeDir) ?? Client.Resolve(state.Str("last"));
             if (root == null)
@@ -149,9 +157,11 @@ namespace ComfyLauncher
                 return null;
             }
             var client = Client.Read(root);
+            StartLog.Step("found and read the client in " + root);
 
             var notes = new List<string>();
             string url = Loader.ManifestUrl(sourceArg ?? state.Str("source"));
+            StartLog.Say("Getting the file list from " + (Uri.TryCreate(url, UriKind.Absolute, out var u) && u.Scheme.StartsWith("http") ? u.Host : url) + ".");
             var manifest = Loader.GetManifest(url, state, notes);
             // A fresh manifest is kept for the next run that cannot reach
             // the server, as the .ps1 does.
@@ -167,7 +177,9 @@ namespace ComfyLauncher
             }
 
             packages = packages ?? new Dictionary<string, object>();
+            StartLog.Say("Comparing the client with the file list.");
             var app = Loader.Load(client, manifest, url, state, packages, home);
+            StartLog.Step("compared the client with the file list");
             // After a batch: the same manifest and state, the disk read again.
             app.Reloader = () => Loader.Load(Client.Read(root), manifest, url, state, packages, home);
             app.Notes.AddRange(notes);
@@ -203,6 +215,7 @@ namespace ComfyLauncher
                         var frame = new Screen(w, h);
                         View.Render(app, frame);
                         Terminal.Present(frame);
+                        StartLog.Finish(app.Client?.Root);
                         dirty = false;
                     }
 

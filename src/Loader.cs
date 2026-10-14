@@ -28,24 +28,44 @@ namespace ComfyLauncher
             return Directory.Exists(source) ? Path.Combine(source, "manifest.json") : source;
         }
 
-        public static string Fetch(string url)
+        // A TIME LIMIT THAT HOLDS. HttpWebRequest.Timeout does not cover the
+        // DNS lookup, and a network that drops packets, or a broken IPv6
+        // route tried before IPv4, can hold a request well past it. So the
+        // request runs on its own thread, and after timeoutMs this stops
+        // waiting and aborts it.
+        public static string Fetch(string url, int timeoutMs = 100000)
         {
             if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return File.ReadAllText(url);
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-            using (var web = new WebClient { Encoding = Encoding.UTF8 })
+            var req = (HttpWebRequest)WebRequest.Create(url);
+            req.UserAgent = "ComfyLauncher";
+            req.Timeout = req.ReadWriteTimeout = timeoutMs;
+            var get = System.Threading.Tasks.Task.Run(() =>
             {
-                web.Headers[HttpRequestHeader.UserAgent] = "ComfyLauncher";
-                return web.DownloadString(url);
-            }
+                using (var res = req.GetResponse())
+                using (var reader = new StreamReader(res.GetResponseStream(), Encoding.UTF8))
+                    return reader.ReadToEnd();
+            });
+            try { if (get.Wait(timeoutMs)) return get.Result; }
+            catch (AggregateException e) { throw e.InnerException; }
+            req.Abort();
+            throw new TimeoutException("no answer in " + timeoutMs / 1000 + " s");
         }
 
         // The manifest, or the copy the state file saved from the last run
-        // that reached it.
+        // that reached it. The window is blank until this returns, so it
+        // waits 10 s at most.
         public static Dictionary<string, object> GetManifest(string url, Dictionary<string, object> state, List<string> notes)
         {
-            try { return Json.Parse(Fetch(url)); }
+            try
+            {
+                var manifest = Json.Parse(Fetch(url, 10000));
+                StartLog.Step("got the manifest from " + url);
+                return manifest;
+            }
             catch (Exception e)
             {
+                StartLog.Step("could not get the manifest from " + url + ": " + e.Message);
                 var saved = state.Obj("manifest");
                 notes.Add(saved != null ? "could not reach " + url + ", using the last manifest saved"
                                         : "could not reach " + url + ": " + e.Message);
