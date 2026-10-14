@@ -19,7 +19,10 @@ namespace ComfyLauncher
         //   whole file of unknown size.
         // etag: when given, the server's ETag must match, or the file changed
         //   upstream since its size was pinned and this refuses it.
-        public static void Download(string url, long offset, long size, string part, string etag, Action<long> progress)
+        // total: for size 0, told the file's size once the host gives it, so
+        //   a pasted link's bar can say "of 39 MB". A GitHub archive is sent
+        //   with no length, and total is never called.
+        public static void Download(string url, long offset, long size, string part, string etag, Action<long> progress, Action<long> total = null)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(part));
             long have = File.Exists(part) ? new FileInfo(part).Length : 0;
@@ -28,7 +31,7 @@ namespace ComfyLauncher
 
             if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
-                CopyLocal(url, offset, size, part, have, progress);
+                CopyLocal(url, offset, size, part, have, progress, total);
                 return;
             }
 
@@ -62,6 +65,7 @@ namespace ComfyLauncher
                     if (offset > 0) throw new IOException("the host does not answer range requests");
                     have = 0;
                 }
+                if (size == 0 && total != null && res.ContentLength > 0) total(have + res.ContentLength);
 
                 using (var input = res.GetResponseStream())
                 using (var output = new FileStream(part, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None))
@@ -85,12 +89,13 @@ namespace ComfyLauncher
             if (size > 0 && got2 != size) throw new IOException("the download stopped at " + got2.ToString("N0") + " of " + size.ToString("N0") + " bytes; run it again to continue");
         }
 
-        static void CopyLocal(string path, long offset, long size, string part, long have, Action<long> progress)
+        static void CopyLocal(string path, long offset, long size, string part, long have, Action<long> progress, Action<long> learned)
         {
             using (var input = File.OpenRead(path))
             using (var output = new FileStream(part, have > 0 ? FileMode.Append : FileMode.Create))
             {
                 long total = size > 0 ? size : input.Length;
+                if (size == 0 && learned != null) learned(total - offset);
                 input.Seek(offset + have, SeekOrigin.Begin);
                 var buffer = new byte[Chunk];
                 long done = have;

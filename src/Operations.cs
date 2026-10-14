@@ -14,6 +14,7 @@ namespace ComfyLauncher
     {
         public string Text;
         public long Bytes;                   // a download's size, for the progress bar
+        public long Learned;                 // for Bytes 0: the size the host gave, set by the worker
         public Action<Action<long>> Run;     // reports bytes done
     }
 
@@ -452,18 +453,15 @@ namespace ComfyLauncher
             string name = label ?? u.Split('/').Last();
             if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) name = name.Substring(0, name.Length - 4);
             var row = new Row { Id = "add:" + u, Tab = "Addons", Kind = RowKind.Check, Label = name, On = true, Have = Have.None, Unknown = true };
-            row.Custom = new List<Op>
-            {
-                new Op
-                {
-                    Text = "download " + urls[0] + (urls.Count > 1 ? " (or main.zip)" : "") + ", put every addon in it in Interface\\AddOns",
-                    Run = progress => InstallFromZip(app, urls, progress),
-                },
-            };
+            // The size is not known until the host answers, so the op learns
+            // it during the download, and the work loop sizes the row then.
+            var op = new Op { Text = "download " + urls[0] + (urls.Count > 1 ? " (or main.zip)" : "") + ", put every addon in it in Interface\\AddOns" };
+            op.Run = progress => InstallFromZip(app, urls, progress, t => System.Threading.Interlocked.Exchange(ref op.Learned, t));
+            row.Custom = new List<Op> { op };
             return row;
         }
 
-        static void InstallFromZip(App app, List<string> urls, Action<long> progress)
+        static void InstallFromZip(App app, List<string> urls, Action<long> progress, Action<long> total)
         {
             string downloads = Path.Combine(app.Home, "downloads"), zip = Path.Combine(downloads, "added-addon.zip");
             Exception last = null;
@@ -473,7 +471,7 @@ namespace ComfyLauncher
                 try
                 {
                     if (File.Exists(zip + ".part")) File.Delete(zip + ".part");
-                    Net.Download(url, 0, 0, zip + ".part", "", progress);
+                    Net.Download(url, 0, 0, zip + ".part", "", progress, total);
                     got = true;
                     break;
                 }

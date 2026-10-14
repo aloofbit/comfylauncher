@@ -520,6 +520,7 @@ namespace ComfyLauncher
         // this thread and changes only here, in Tick.
         System.Threading.Tasks.Task job;
         public bool HasJob => job != null;
+        List<Op> jobList;
         long jobDone, jobBase, jobTotal;
         int jobOps, jobOpsDone;
         bool starting;
@@ -530,6 +531,20 @@ namespace ComfyLauncher
             {
                 if (Working != null)
                 {
+                    // A SIZE LEARNED FROM THE HOST, for an addon added from a
+                    // link: the row and the batch take it, so the bar reads
+                    // "of 39 MB" and not the 50 KB every row weighs at least.
+                    if (jobTotal == 0)
+                    {
+                        long learned = jobList.Sum(o => System.Threading.Interlocked.Read(ref o.Learned));
+                        if (learned > 0)
+                        {
+                            double before = Weight(Working);
+                            Working.SizeKb = (int)(learned / 1024);
+                            BatchKb += Weight(Working) - before;
+                            jobTotal = learned;
+                        }
+                    }
                     long done = System.Threading.Interlocked.Read(ref jobDone);
                     double p = jobTotal > 0 ? (double)done / jobTotal : (double)jobOpsDone / Math.Max(1, jobOps);
                     Working.Progress = Math.Min(1.0, p);
@@ -599,6 +614,7 @@ namespace ComfyLauncher
             Working = next;
             next.Progress = 0;
             var list = Operations.For(this, next);
+            jobList = list;
             jobOps = list.Count; jobOpsDone = 0;
             jobTotal = list.Sum(o => o.Bytes);
             jobBase = 0;
@@ -609,7 +625,7 @@ namespace ComfyLauncher
                 {
                     long start = jobBase;
                     op.Run(b => System.Threading.Interlocked.Exchange(ref jobDone, start + b));
-                    jobBase += op.Bytes;
+                    jobBase += op.Bytes > 0 ? op.Bytes : System.Threading.Interlocked.Read(ref op.Learned);
                     System.Threading.Interlocked.Exchange(ref jobDone, jobBase);
                     jobOpsDone++;
                 }
