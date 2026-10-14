@@ -235,6 +235,8 @@ namespace ComfyLauncher
             // A mod with a `section` gets a heading of its own after Game
             // fixes, in the order the sections first appear.
             var sections = new List<(string title, List<Row> rows)>();
+            // Files this launcher put there that something else removed.
+            var goneFiles = new List<string>();
             foreach (var mod in mods.Where(m => !m.Bool("variant")))
             {
                 string file = mod.Str("file");
@@ -248,7 +250,12 @@ namespace ComfyLauncher
 
                 // VanillaFixes starts the game and loads the rest: a row only
                 // when the client is missing it, since it is not a switch.
-                if (!inject && present) continue;
+                // WHOLE, NOT ONLY THE EXE: VfPatcher.dll is what loads the
+                // mods, and antivirus takes either one. Without them the game
+                // starts as WoW.exe with no mod in it.
+                var fileParts = !inject ? ModParts(mod).Where(p => p.Type == PartType.Dll || p.Type == PartType.File).Select(p => p.Name).ToList() : null;
+                var lost = !inject ? fileParts.Where(f => !File.Exists(client.PathOf(f))).ToList() : null;
+                if (!inject && lost.Count == 0) continue;
                 if (inject && !present && !enabled && url == "") continue;
 
                 var row = new Row
@@ -269,7 +276,15 @@ namespace ComfyLauncher
                 bool oldThere = oldOn || row.SupersedesFiles.Any(f => File.Exists(client.PathOf(f)))
                                 || row.Supersedes.Any(a => Directory.Exists(client.AddonPath(a)));
 
-                if (!inject) { row.Have = Have.None; row.On = false; }
+                if (!inject)
+                {
+                    // MISSING WHEN MODS NEED IT: ticked, so Start the game
+                    // installs it first. With no mod on, it is only offered.
+                    bool needed = client.EnabledDlls.Count > 0;
+                    row.Have = needed || lost.Count < fileParts.Count ? Have.Missing : Have.None;
+                    row.On = needed;
+                    if (needed) goneFiles.AddRange(lost);
+                }
                 else
                 {
                     row.On = enabled;
@@ -329,8 +344,12 @@ namespace ComfyLauncher
                     sections[s].rows.Add(row);
                 }
             }
-            var dxvk = DxvkRow(client, packages.Obj("dxvk"), home, Was("dxvk"));
+            var dxvk = DxvkRow(client, packages.Obj("dxvk"), home, Was("dxvk"), state);
             if (dxvk != null) gameFixes.Add(dxvk);
+            if (dxvk != null && dxvk.Have == Have.Missing) goneFiles.Add(dxvk.BuildFile);
+            if (goneFiles.Count > 0)
+                app.Notes.Add(string.Join(", ", goneFiles) + (goneFiles.Count == 1 ? " is" : " are") + " gone (antivirus?). Start the game puts "
+                              + (goneFiles.Count == 1 ? "it" : "them") + " back");
 
             // ---- Mods: the packages, from packages.json. A file on disk
             // belongs to a package only when its size is the package's. A
@@ -596,7 +615,23 @@ namespace ComfyLauncher
         // fetched again; a file no build knows is the player's own, and is
         // offered the same way. Unticked with a file set aside is Off, and
         // the choice is the build that was last on.
-        static Row DxvkRow(Client client, Dictionary<string, object> spec, string home, string was)
+        //
+        // NO d3d9.dll IS NORMAL: the game then uses Windows' own Direct3D 9.
+        // So a missing file is told apart by `dxvk-seen` in the state file,
+        // the build in place at the last start, by client. A build in place
+        // then and now neither in place nor set aside was removed by
+        // something else, most often antivirus: the launcher's own switches
+        // update the record (App.Finish). The row reads missing and stays
+        // ticked, so Start the game puts it back: from its set-aside copy
+        // when there is one, or fetched. The record stays until the file is
+        // back, or the player unticks the row (App.TickOff), so a batch of
+        // other work in between does not lose it.
+        //
+        // TWO BUILDS CAN BE ONE FILE: Turtle's build is gplasync 2.7.1 with
+        // async off, and "2.7.1 async" is the same d3d9.dll with the line in
+        // dxvk.conf. Of builds sharing a hash, the one whose conf lines are
+        // all in dxvk.conf is the one in place, else the one with none.
+        static Row DxvkRow(Client client, Dictionary<string, object> spec, string home, string was, Dictionary<string, object> state)
         {
             string file = spec.Str("file");
             if (!Safe.IsName(file)) return null;
@@ -604,12 +639,19 @@ namespace ComfyLauncher
             {
                 Name = b.Str("name"), Note = b.Str("note"), Sha256 = b.Str("sha256"), Url = b.Str("url"), Size = b.Long("size"),
                 ArchiveSha256 = b.Str("archive_sha256"), Extract = b.Str("extract"),
+                Conf = b.Strs("conf").ToArray(),
             }).ToList();
             var own = new List<Build>();
+            Build Known(string sha)
+            {
+                var same = known.Where(k => k.Sha256.Equals(sha, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (same.Count <= 1) return same.FirstOrDefault();
+                return same.FirstOrDefault(k => k.Conf.Length > 0 && client.ConfMissing(k.Conf).Count == 0)
+                       ?? same.FirstOrDefault(k => k.Conf.Length == 0) ?? same[0];
+            }
             Build Match(string sha)
             {
-                var b = known.FirstOrDefault(k => k.Sha256.Equals(sha, StringComparison.OrdinalIgnoreCase))
-                        ?? own.FirstOrDefault(k => k.Sha256.Equals(sha, StringComparison.OrdinalIgnoreCase));
+                var b = Known(sha) ?? own.FirstOrDefault(k => k.Sha256.Equals(sha, StringComparison.OrdinalIgnoreCase));
                 if (b != null) return b;
                 own.Add(b = new Build { Name = own.Count == 0 ? "your own" : "your own " + (own.Count + 1), Sha256 = sha });
                 return b;
@@ -624,8 +666,11 @@ namespace ComfyLauncher
             if (Directory.Exists(asideDir)) asideFiles.AddRange(Directory.GetFiles(asideDir, file, SearchOption.AllDirectories));
             foreach (var a in asideFiles)
             {
-                var b = Match(Client.Sha256(a));
+                string sha = Client.Sha256(a);
+                var b = Match(sha);
                 if (b.Aside == null) b.Aside = a;
+                // Its twin is the same file, so the same copy brings it back.
+                foreach (var twin in known.Where(k => k.Aside == null && k.Sha256.Equals(sha, StringComparison.OrdinalIgnoreCase))) twin.Aside = a;
             }
 
             var builds = known.Where(b => b.Url != "" || b == onDisk || b.Aside != null).Concat(own).ToList();
@@ -637,15 +682,23 @@ namespace ComfyLauncher
             };
             row.Choices = builds.Select(b => b.Name).ToArray();
             row.ChoiceVersion = row.Choices;
-            row.ChoiceKb = builds.Select(b => b == onDisk || b.Aside != null ? 0 : (int)(b.Size / 1024)).ToArray();
+            // In place: that build, or its twin, which is the same file.
+            bool Here(Build b) => onDisk != null && b.Sha256.Equals(onDisk.Sha256, StringComparison.OrdinalIgnoreCase);
+            row.ChoiceKb = builds.Select(b => Here(b) || b.Aside != null ? 0 : (int)(b.Size / 1024)).ToArray();
             row.ChoiceParts = builds.Select(b => file
                 + (b.Note != "" ? ", " + b.Note : "")
-                + (b == onDisk ? "" : b.Aside != null ? ", set aside" : b.Url != "" ? ", from " + Path.GetFileName(b.Url) : "")).ToArray();
+                + (Here(b) ? "" : b.Aside != null ? ", set aside" : b.Url != "" ? ", from " + Path.GetFileName(b.Url) : "")).ToArray();
+
+            string seenSha = Seen(state, client.Root).Str(SeenKey(state, client.Root));
 
             if (onDisk != null)
             {
                 row.Have = Have.Current; row.On = true;
                 row.Choice = row.HaveChoice = builds.IndexOf(onDisk);
+                SetSeen(state, client.Root, onDisk.Sha256);
+                // ASYNC IS A LINE IN dxvk.conf, not only the file: without it
+                // gplasync runs as stock DXVK. Update puts the line back.
+                if (onDisk.Conf.Length > 0 && client.ConfMissing(onDisk.Conf).Count > 0) row.Have = Have.Behind;
             }
             else
             {
@@ -653,8 +706,37 @@ namespace ComfyLauncher
                 row.Have = back != null ? Have.Off : Have.None;
                 row.On = false;
                 row.Choice = row.HaveChoice = back != null ? builds.IndexOf(back) : 0;
+                // Antivirus takes d3d9.dll and leaves dxvk.conf, so Known
+                // still tells the async twin from the plain one.
+                var gone = seenSha == "" ? null : Known(seenSha) ?? builds.FirstOrDefault(k => k.Sha256.Equals(seenSha, StringComparison.OrdinalIgnoreCase));
+                var again = gone != null && (gone.Aside != null || gone.Url != "") ? gone : null;
+                if (again == null) SetSeen(state, client.Root, null);
+                else
+                {
+                    row.Have = Have.Missing; row.On = true;
+                    row.Choice = row.HaveChoice = builds.IndexOf(again);
+                }
             }
             return row;
+        }
+
+        // `dxvk-seen` in the state file: the sha256 of the build in place at
+        // the last start, or after the launcher's last switch, by client.
+        static Dictionary<string, object> Seen(Dictionary<string, object> state, string root)
+        {
+            var seen = state.Obj("dxvk-seen");
+            if (seen == null) state["dxvk-seen"] = seen = new Dictionary<string, object>();
+            return seen;
+        }
+
+        static string SeenKey(Dictionary<string, object> state, string root) =>
+            Seen(state, root).Keys.FirstOrDefault(k => k.Equals(root, StringComparison.OrdinalIgnoreCase)) ?? root;
+
+        // null clears it.
+        public static void SetSeen(Dictionary<string, object> state, string root, string sha)
+        {
+            string key = SeenKey(state, root);
+            if (sha == null) Seen(state, root).Remove(key); else Seen(state, root)[key] = sha;
         }
 
         // A mod's files: the extract map when it has one (the DLL, an ini, an

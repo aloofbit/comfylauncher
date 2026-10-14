@@ -63,6 +63,7 @@ namespace ComfyLauncher
         public string ArchiveSha256 = "";
         public string Extract = "";         // the entry in the archive
         public string Aside;                // where it is set aside, or null
+        public string[] Conf = new string[0];   // lines it needs in dxvk.conf (async)
     }
 
     // A ROW IS A PACKAGE: one name for whatever parts it takes, a mod, a
@@ -503,6 +504,9 @@ namespace ComfyLauncher
         {
             var also = new List<Row>();
             row.On = false;
+            // A DXVK build read as removed, unticked: the player does not want
+            // it back, so the next start does not ask again.
+            if (row.Builds != null && row.Have == Have.Missing && Client != null) { Loader.SetSeen(State, Client.Root, null); SaveState(); }
             // Off shows the first choice's size and parts, which is what the
             // next Space will tick. An installed variant keeps its own.
             if (row.Choices != null) row.Choice = row.Have == Have.None ? 0 : row.HaveChoice;
@@ -649,6 +653,12 @@ namespace ComfyLauncher
             else if (action == "disable") row.Have = Have.Off;
             else { row.Have = Have.Current; row.HaveChoice = row.Choice; }
             row.Failed = null;
+
+            // The DXVK build this launcher put in place, or none after it set
+            // it aside, so the next start does not read its own switch as a
+            // file that antivirus removed.
+            if (row.Builds != null && Client != null)
+                Loader.SetSeen(State, Client.Root, action == "disable" ? null : row.Builds[row.Choice].Sha256);
 
             if (row.StateKey != "" && Client != null)
             {

@@ -281,6 +281,26 @@ namespace ComfyLauncher
 
         public bool DllEnabled(string file) => EnabledDlls.Any(e => e.Equals(file, StringComparison.OrdinalIgnoreCase));
 
+        // dxvk.conf BESIDE WoW.exe, where DXVK reads it: the game's working
+        // directory is the client's folder. A line is `key = value`, and a
+        // # starts a comment. Values are compared without case or spaces.
+        public static string ConfKey(string line)
+        {
+            string t = line.Trim();
+            int eq = t.IndexOf('=');
+            return t.StartsWith("#") || eq < 0 ? "" : t.Substring(0, eq).Trim();
+        }
+
+        static string ConfNorm(string line) => Regex.Replace(line, @"\s", "").ToLowerInvariant();
+
+        // The wanted lines that dxvk.conf does not have.
+        public List<string> ConfMissing(IEnumerable<string> want)
+        {
+            string path = PathOf("dxvk.conf");
+            var have = File.Exists(path) ? File.ReadAllLines(path).Select(ConfNorm).ToList() : new List<string>();
+            return want.Where(w => !have.Contains(ConfNorm(w))).ToList();
+        }
+
         // Files and bytes under a folder: how an addon installed by hand, or
         // by a launcher that did not record it, is told to be current.
         public static (int Files, long Bytes) DiskPrint(string folder)

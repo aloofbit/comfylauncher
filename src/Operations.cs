@@ -73,10 +73,7 @@ namespace ComfyLauncher
                 string file = Path.Combine(downloads, name);
                 Net.Download(p.Url, 0, p.Size > 0 && p.Type != PartType.Patch ? p.Size : 0, file + ".part", p.Etag, progress);
                 if (p.Sha256 != "" && !Client.Sha256(file + ".part").Equals(p.Sha256, StringComparison.OrdinalIgnoreCase))
-                {
-                    File.Delete(file + ".part");
-                    throw new IOException(name + " did not match its checksum, so nothing was changed");
-                }
+                    throw NotMatched(name, file + ".part");
                 if (File.Exists(file)) File.Delete(file);
                 File.Move(file + ".part", file);
                 fetched[p.Url] = file;
@@ -307,8 +304,21 @@ namespace ComfyLauncher
             string action = row.Action;
             string live = c.PathOf(row.BuildFile);
             var want = row.Builds[row.Choice];
-            bool bring = action == "install" || action == "change" || action == "enable";
+            bool bring = action == "install" || action == "reinstall" || action == "change" || action == "enable";
             string fresh = Path.Combine(app.Home, "downloads", row.BuildFile + ".new");
+
+            // THE SAME FILE, ANOTHER BUILD: Turtle's and 2.7.1 async are one
+            // d3d9.dll. The change is only the dxvk.conf line, written or
+            // taken out; the file stays where it is.
+            var had = row.Builds[row.HaveChoice];
+            if (action == "change" && File.Exists(live) && had.Sha256.Equals(want.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                if (want.Conf.Length > 0)
+                    ops.Add(new Op { Text = "dxvk.conf: set " + string.Join(", ", want.Conf), Run = _ => SetConf(c, want.Conf) });
+                else if (had.Conf.Length > 0)
+                    ops.Add(new Op { Text = "dxvk.conf: take out " + string.Join(", ", had.Conf.Select(Client.ConfKey)), Run = _ => ClearConf(c, had.Conf) });
+                return ops;
+            }
 
             if (bring && want.Aside == null)
             {
@@ -321,10 +331,7 @@ namespace ComfyLauncher
                     {
                         ExtractTarGz(fetch(part, progress), want.Extract, fresh);
                         if (!Client.Sha256(fresh).Equals(want.Sha256, StringComparison.OrdinalIgnoreCase))
-                        {
-                            File.Delete(fresh);
-                            throw new IOException(want.Extract + " did not match its checksum, so nothing was changed");
-                        }
+                            throw NotMatched(want.Extract, fresh);
                     },
                 });
             }
@@ -346,7 +353,52 @@ namespace ComfyLauncher
             }
             else if (bring)
                 ops.Add(new Op { Text = "write " + row.BuildFile + ", DXVK " + want.Name, Run = _ => File.Move(fresh, live) });
+
+            // Async is off in gplasync until dxvk.conf turns it on. A change
+            // away leaves the line: stock DXVK ignores a key it does not know.
+            if ((bring || action == "update") && want.Conf.Length > 0)
+                ops.Add(new Op { Text = "dxvk.conf: set " + string.Join(", ", want.Conf), Run = _ => SetConf(c, want.Conf) });
             return ops;
+        }
+
+        // The lines with these lines' keys, taken out of dxvk.conf.
+        static void ClearConf(Client c, string[] lines)
+        {
+            string path = c.PathOf("dxvk.conf");
+            if (!File.Exists(path)) return;
+            var keys = lines.Select(Client.ConfKey).ToList();
+            var kept = File.ReadAllLines(path).Where(l => !keys.Any(k => k.Equals(Client.ConfKey(l), StringComparison.OrdinalIgnoreCase))).ToList();
+            File.WriteAllText(path, kept.Count == 0 ? "" : string.Join("\r\n", kept) + "\r\n", Encoding.ASCII);
+        }
+
+        // dxvk.conf as a diff, like dlls.txt: a line with the same key is
+        // replaced where it is, a new key goes on the end, and every other
+        // line, comments included, is kept.
+        static void SetConf(Client c, string[] want)
+        {
+            string path = c.PathOf("dxvk.conf");
+            var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : new List<string>();
+            foreach (var w in want)
+            {
+                string key = Client.ConfKey(w);
+                int at = lines.FindIndex(l => Client.ConfKey(l).Equals(key, StringComparison.OrdinalIgnoreCase));
+                if (at >= 0) lines[at] = w; else lines.Add(w);
+            }
+            File.WriteAllText(path, string.Join("\r\n", lines) + "\r\n", Encoding.ASCII);
+        }
+
+        // A DOWNLOAD THAT FAILED ITS CHECK, deleted. A file that cannot be
+        // read, or is gone, was taken by antivirus while it was written:
+        // Windows Defender quarantines vanillafixes-1.5.3.zip as
+        // Trojan:Win32/Vigorf.A (measured 2026-10-13). A checksum message
+        // there sent players looking for a broken download.
+        static IOException NotMatched(string name, string path)
+        {
+            bool taken = !File.Exists(path) || Client.Sha256(path) == "";
+            try { File.Delete(path); } catch { }
+            return new IOException(taken
+                ? "antivirus took " + name + ". Add the WoW folder as an exclusion, then try again"
+                : name + " did not match its checksum, so nothing was changed");
         }
 
         // ONE ENTRY OF A .tar.gz, which .NET Framework cannot open by itself.

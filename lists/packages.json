@@ -7,18 +7,31 @@
   "_comment5": "was: sizes of a part that earlier pins shipped. WHEN A PIN MOVES, ADD THE OLD SIZE HERE. A part on the disk at one of them makes the row read update (launcher 1.28): the update fetches every part not at its pinned size, deletes the old files once the new ones pass their checks, and ticks what the package needs. Without it, the old file is somebody's own patch, and the row is refused until the player unticks it.",
 
   "dxvk": {
-    "_why": "Added 2026-09-24 for Project Reforged, whose Turtle page asks for DXVK 2.7.1, or 2.5.3 as a fallback: the x32 d3d9.dll beside WoW.exe. It is not a mod in mods.json because it is not a line in dlls.txt; the game loads it by sitting beside the exe. One row, one choice per build. A build is recognised BY THE sha256 OF d3d9.dll, measured 2026-09-24: Turtle ships its own 2.7.1 build (a2cd68..., 4501518 bytes, in octow, clean-turtle and fresh-test), which is not stock 2.7.1 (00ecd4..., in octow - Copy and ravencraft). twow-hd has stock 2.5.3. A build with no url cannot be fetched and is offered only while its file is on the disk or set aside. A file no build knows is offered as the player's own. Switching sets the old file aside, never deletes it. The tarball sha256 came from a curl download and matched three downloads by the launcher; the release pages publish none.",
+    "_why": "Added 2026-09-24 for Project Reforged, whose Turtle page asks for DXVK 2.7.1, or 2.5.3 as a fallback: the x32 d3d9.dll beside WoW.exe. It is not a mod in mods.json because it is not a line in dlls.txt; the game loads it by sitting beside the exe. One row, one choice per build. A build is recognised BY THE sha256 OF d3d9.dll, measured 2026-09-24: Turtle ships its own 2.7.1 build (a2cd68..., 4501518 bytes, in octow, clean-turtle and fresh-test), which is not stock 2.7.1 (00ecd4..., in octow - Copy and ravencraft). twow-hd has stock 2.5.3. A build with no url cannot be fetched and is offered only while its file is on the disk or set aside. A file no build knows is offered as the player's own. Switching sets the old file aside, never deletes it. Added 2026-10-13: stock 3.1.1, and 3.1.1 async, which is dxvk-gplasync v3.1.1-1 (gitlab.com/Ph42oN/dxvk-gplasync, its releases/ folder keeps each tarball). Async is off in gplasync until dxvk.conf beside WoW.exe has dxvk.enableAsync = true, so that build carries `conf`: lines the launcher puts in dxvk.conf, replacing a line with the same key. Stock DXVK ignores the key, so a change away from async leaves dxvk.conf as it is. gplasync removed its gplAsyncCache option in v2.7-1. Turtle's build IS dxvk-gplasync v2.7.1-1 (same sha256, measured 2026-10-14), shipped with no dxvk.conf, so async is off. It is two entries with one file: Turtle's, and 2.7.1 async, which adds the dxvk.conf line. The launcher tells them apart by dxvk.conf, and a change between them only writes or removes the line. Async is turned on only when a player chooses it. Hashes measured from downloads here. The tarball sha256 came from a curl download and matched three downloads by the launcher; the release pages publish none.",
     "file": "d3d9.dll",
     "note": "draws the game through Vulkan",
     "advice": "Project Reforged asks for 2.7.1, or 2.5.3 as a fallback.",
     "builds": [
-      { "name": "Turtle's", "note": "2.7.1, as Turtle ships it", "sha256": "a2cd6841e102f37189527c118ec416fa5071ac4d3120762973d9a0c6c5fd067e" },
+      { "name": "Turtle's", "note": "gplasync 2.7.1 with async off, as Turtle ships it", "sha256": "a2cd6841e102f37189527c118ec416fa5071ac4d3120762973d9a0c6c5fd067e",
+        "url": "https://gitlab.com/Ph42oN/dxvk-gplasync/-/raw/main/releases/dxvk-gplasync-v2.7.1-1.tar.gz", "size": 10327207,
+        "archive_sha256": "590050b88be7b156cf641abe762e1ad47ebbe828f7f0edb2970aa4716ee3af6d", "extract": "dxvk-gplasync-v2.7.1-1/x32/d3d9.dll" },
+      { "name": "2.7.1 async", "note": "gplasync: shaders compile in the background, less stutter", "sha256": "a2cd6841e102f37189527c118ec416fa5071ac4d3120762973d9a0c6c5fd067e",
+        "url": "https://gitlab.com/Ph42oN/dxvk-gplasync/-/raw/main/releases/dxvk-gplasync-v2.7.1-1.tar.gz", "size": 10327207,
+        "archive_sha256": "590050b88be7b156cf641abe762e1ad47ebbe828f7f0edb2970aa4716ee3af6d", "extract": "dxvk-gplasync-v2.7.1-1/x32/d3d9.dll",
+        "conf": ["dxvk.enableAsync = true"] },
       { "name": "2.7.1", "sha256": "00ecd422b3b12e9d3b309785f3f19431405389d80eb4a37018ebc63e2d87d900",
         "url": "https://github.com/doitsujin/dxvk/releases/download/v2.7.1/dxvk-2.7.1.tar.gz", "size": 10310666,
         "archive_sha256": "d85ce7c79f57ecd765aaa1b9e7007cb875e6fde9f6d331df799bce73d513ce87", "extract": "dxvk-2.7.1/x32/d3d9.dll" },
       { "name": "2.5.3", "sha256": "3d6b529dc4f7f55639aad580e81b2939ab1489cdbb9f1550dce74e41656bbf5b",
         "url": "https://github.com/doitsujin/dxvk/releases/download/v2.5.3/dxvk-2.5.3.tar.gz", "size": 9881540,
-        "archive_sha256": "d8e6ef7d1168095165e1f8a98c7d5a4485b080467bb573d2a9ef3e3d79ea1eb8", "extract": "dxvk-2.5.3/x32/d3d9.dll" }
+        "archive_sha256": "d8e6ef7d1168095165e1f8a98c7d5a4485b080467bb573d2a9ef3e3d79ea1eb8", "extract": "dxvk-2.5.3/x32/d3d9.dll" },
+      { "name": "3.1.1", "sha256": "265888c31ca78dffa290c39cb7e50bfb02762590e41927906e46fb32f01497fa",
+        "url": "https://github.com/doitsujin/dxvk/releases/download/v3.1.1/dxvk-3.1.1.tar.gz", "size": 18041512,
+        "archive_sha256": "40565b4a724aadc4433fa4e010b4b23916d9b1f1baeee64e17186db94f54e608", "extract": "dxvk-3.1.1/x32/d3d9.dll" },
+      { "name": "3.1.1 async", "note": "gplasync: shaders compile in the background, less stutter", "sha256": "f390a367cec0eda6828550c311ff1190c2e2cb2c443285479a078543da5e572c",
+        "url": "https://gitlab.com/Ph42oN/dxvk-gplasync/-/raw/main/releases/dxvk-gplasync-v3.1.1-1.tar.gz", "size": 18054024,
+        "archive_sha256": "11b888a49e9f8724a950d19bfef2f5866f91f86a9fb1b31ce0160411271af115", "extract": "dxvk-gplasync-v3.1.1-1/x32/d3d9.dll",
+        "conf": ["dxvk.enableAsync = true"] }
     ]
   },
 
