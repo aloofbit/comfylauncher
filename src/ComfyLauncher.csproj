@@ -24,7 +24,7 @@
          launcher.release for self update, and raised by Build-Manifest.ps1
          when the sources change. 1.0 is the first C# release: every 0.x
          launcher counts itself behind and updates to it. -->
-    <Version>1.28</Version>
+    <Version>1.30</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>ComfyCraft Launcher</Product>
   </PropertyGroup>
