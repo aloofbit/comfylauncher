@@ -275,7 +275,12 @@ namespace ComfyLauncher
                 // the rest after it restarts.
                 if (app.SelfBehind)
                 {
-                    RunOrConfirm(app, new List<Row> { SelfUpdate.Row(app, app.SelfUrl, app.SelfSha) }, play: false);
+                    // A REALM PICKED BEFORE goes first. The new launcher reads
+                    // the realm from realmlist.wtf, so a switch left waiting
+                    // was lost in the restart. Writing it needs no manifest.
+                    var first = app.Rows.Where(r => r.Kind == RowKind.Radio && r.Action == "switch").ToList();
+                    first.Add(SelfUpdate.Row(app, app.SelfUrl, app.SelfSha));
+                    RunOrConfirm(app, first, play: false);
                     return;
                 }
                 var steps = new List<Row>();
