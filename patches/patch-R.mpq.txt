@@ -1,2 +1,2 @@
-Comfy Reforged fixes: Characters and gear models with their culling box corrected
+Comfy Reforged fixes: Characters and gear models with their culling box corrected, and HD skins for Turtle's frogs
 X-Package: reforged-characters
