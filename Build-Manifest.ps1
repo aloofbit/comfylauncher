@@ -217,12 +217,15 @@ function Get-TocNote([string] $Toc) {
 }
 
 # -------------------------------------------------------------------- start
-# The launcher as the last build described it, read before dist\ is cleared,
-# so the Launcher section can say whether this build offers players a new one.
+# The last build's manifest, read before dist\ is cleared: the Launcher section
+# says whether this build offers players a new one, and the Patches section
+# finds the old size of an X-Package patch that changed.
 $previousLauncher = $null
+$previousPackages = $null
 try {
-    $previousLauncher = (Get-Content -LiteralPath (Join-Path $Out 'manifest.json') -Raw -ErrorAction Stop |
-                         ConvertFrom-Json).launcher
+    $previousManifest = Get-Content -LiteralPath (Join-Path $Out 'manifest.json') -Raw -ErrorAction Stop | ConvertFrom-Json
+    $previousLauncher = $previousManifest.launcher
+    $previousPackages = $previousManifest.packages
 } catch { }
 
 if (Test-Path -LiteralPath $Out) { Remove-Item -LiteralPath $Out -Recurse -Force }
@@ -377,10 +380,21 @@ foreach ($p in $patchFiles) {
     # fixes were the first, 2026-10-06: patch-Q rides with Reforged World and patch-R
     # with Characters and gear, because each holds fixed copies of that pack's
     # models and must never reach a client without it.
+    #
+    # `X-Was: <size>, <size>` lists the sizes earlier builds of an X-Package
+    # patch shipped at. They go out as the part's `was`, and a launcher that
+    # finds a file at one of them reads the row as update, not reinstall, and
+    # replaces the file. A package knows its parts by size alone, so without
+    # this a rebuilt patch-R read as somebody else's file, the row said
+    # reinstall, and the old copy went aside (2026-10-14). THE LINE IS KEPT
+    # HERE, NOT BY HAND: when the patch's size differs from the last build's,
+    # the old size is added to the line and the sidecar is written back. Commit
+    # it with the build.
     $note = ''
     $optIn = $false
     $required = $false
     $package = ''
+    $was = New-Object System.Collections.Generic.List[long]
     $side = Join-Path $Patches ($p.Name + '.txt')
     if (Test-Path -LiteralPath $side) {
         $kept = @()
@@ -388,19 +402,35 @@ foreach ($p in $patchFiles) {
             if     ("$line" -match '^\s*X-OptIn:\s*1\s*$')    { $optIn = $true }
             elseif ("$line" -match '^\s*X-Required:\s*1\s*$') { $required = $true }
             elseif ("$line" -match '^\s*X-Package:\s*(\S+)\s*$') { $package = $Matches[1] }
+            elseif ("$line" -match '^\s*X-Was:\s*([\d,\s]*)$') { foreach ($n in ($Matches[1] -split '[,\s]+' | Where-Object { $_ })) { $was.Add([long]$n) } }
             else   { $kept += $line }
         }
         $note = ($kept -join "`n").Trim()
     }
+    if ($was.Count -gt 0 -and -not $package) { throw "$($p.Name).txt says X-Was without X-Package" }
     if ($package) {
         if ($optIn -or $required) { throw "$($p.Name).txt says X-Package with X-OptIn or X-Required" }
         if ($p.Name -notmatch '^patch-([A-Za-z])\.mpq$') { throw "$($p.Name).txt says X-Package, but only a patch-<letter>.mpq can be a package part" }
+        $partLetter = $Matches[1].ToUpper()
+        $before = @($previousPackages.sections | ForEach-Object { $_.packages } | Where-Object { $_.id -eq $package } |
+                    ForEach-Object { $_.parts } | Where-Object { "$($_.letter)" -ieq $partLetter })
+        if ($before.Count -eq 1 -and [long]$before[0].size -ne $p.Length -and -not $was.Contains([long]$before[0].size)) {
+            $was.Add([long]$before[0].size)
+            $text = [IO.File]::ReadAllText($side)
+            $eol  = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+            $wasLine = 'X-Was: ' + ($was -join ', ')
+            if ($text -match '(?m)^\s*X-Was:.*$') { $text = [regex]::Replace($text, '(?m)^\s*X-Was:[^\r\n]*', $wasLine) }
+            else { $text = $text.TrimEnd("`r", "`n") + $eol + $wasLine + $eol }
+            [IO.File]::WriteAllText($side, $text, (New-Object Text.UTF8Encoding($false)))
+            Write-Host ("    {0}: was {1} bytes, added to X-Was in its sidecar; commit it" -f $p.Name, $before[0].size) -ForegroundColor Yellow
+        }
         $packageParts.Add([pscustomobject]@{
             package = $package
-            letter  = $Matches[1].ToUpper()
+            letter  = $partLetter
             size    = $p.Length
             url     = $BaseUrl + 'files/' + $p.Name
             sha256  = (Get-FileHash -LiteralPath $p.FullName -Algorithm SHA256).Hash.ToLower()
+            was     = @($was | Where-Object { $_ -ne $p.Length })
             file    = $p.Name
         }) > $null
         Write-Item ("{0,-18} {1}  part of {2}" -f $p.Name, (Format-Size $p.Length), $package)
@@ -541,6 +571,10 @@ if (Test-Path -LiteralPath $modsFile) {
         # The heading the C# launcher draws the row under. Absent means Game
         # fixes. The .ps1 launcher does not read it.
         if ($m.section) { $entry.section = [string]$m.section }
+        # No row of its own: the C# launcher turns it on and off with the
+        # package that needs it (comfylogin.dll, 2026-10-14). The .ps1
+        # launcher does not read it.
+        if ($m.hidden) { $entry.hidden = $true }
         # Only when there is one. An entry with no url is a switch and nothing
         # else, and writing empty keys beside it would have every mod look
         # fetchable to anything reading the manifest.
@@ -760,7 +794,9 @@ if (Test-Path -LiteralPath $packagesFile) {
         $pkg = $pkg[0]
         if ($pkg.choices) { throw "$($pp.file).txt: '$($pp.package)' has choices, and X-Package adds to plain parts only." }
         if (@($pkg.parts | Where-Object { "$($_.letter)" -ieq $pp.letter })) { throw "$($pp.file).txt: '$($pp.package)' already has a patch-$($pp.letter)." }
-        $pkg.parts = @($pkg.parts) + [pscustomobject][ordered]@{ letter = $pp.letter; size = $pp.size; url = $pp.url; sha256 = $pp.sha256 }
+        $part = [ordered]@{ letter = $pp.letter; size = $pp.size; url = $pp.url; sha256 = $pp.sha256 }
+        if (@($pp.was).Count -gt 0) { $part.was = @($pp.was) }
+        $pkg.parts = @($pkg.parts) + [pscustomobject]$part
     }
     $modFiles = @($mods | ForEach-Object { 'mod:' + $_.file })
     $count = 0
