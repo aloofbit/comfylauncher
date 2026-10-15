@@ -240,7 +240,7 @@ namespace ComfyLauncher
             // that build, and Space brings it back rather than fetching the
             // first one (DXVK went from Turtle's own build to stock 2.7.1).
             var unticked = app.TickOn(row, row.Choice);
-            var added = app.Rows.Where(r => r.On && r != row && !before.Contains(r)).Select(r => r.Label).ToList();
+            var added = app.Rows.Where(r => r.On && r != row && !r.Hidden && !before.Contains(r)).Select(r => r.Label).ToList();
             var said = new List<string>();
             if (added.Count > 0) said.Add("also ticked " + string.Join(", ", added));
             if (unticked.Count > 0) said.Add("unticked " + string.Join(", ", unticked.Select(r => r.FullName).Distinct()) + ": cannot be on together");

@@ -285,8 +285,9 @@
     }
   },
   {
-    "_why": "Added 2026-10-08: comfylogin's DLL. The Saved accounts row in packages.json brings patch-W and needs this row. The DLL keeps the list in WTF\\comfylogin.txt, encrypts the passwords with DPAPI, and turns off the stock exe's GlueXML check. The release asset is one zip with comfylogin.dll and Data/patch-W.mpq; only the DLL is taken here, and the package row takes the patch. The pin is our own hash of the asset, and it matched the digest GitHub publishes for it.",
+    "_why": "Added 2026-10-08: comfylogin's DLL. The Saved accounts row in packages.json brings patch-W and needs this row. The DLL keeps the list in WTF\\comfylogin.txt, encrypts the passwords with DPAPI, and turns off the stock exe's GlueXML check. The release asset is one zip with comfylogin.dll and Data/patch-W.mpq; only the DLL is taken here, and the package row takes the patch. The pin is our own hash of the asset, and it matched the digest GitHub publishes for it. Hidden since 2026-10-14, the owner's call: two ticks for one feature confused players. The C# launcher draws no row for it, lists its file under Saved accounts, and turns it on and off with that row.",
     "name": "Saved accounts DLL",
+    "hidden": true,
     "file": "comfylogin.dll",
     "note": "keeps the saved accounts list and its passwords",
     "version": "v0.2.2-alpha",

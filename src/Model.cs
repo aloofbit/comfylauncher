@@ -87,6 +87,11 @@ namespace ComfyLauncher
         public string Url;         // Link rows
         public string Advice = ""; // a last sentence for the detail line
 
+        // A PART OF THE ROWS THAT NEED IT, drawn on no tab: comfylogin.dll
+        // under Saved accounts (2026-10-14). Ticking one of those rows ticks
+        // it, and it goes off when no ticked row needs it.
+        public bool Hidden;
+
         // A SWITCH, NOT A DOWNLOAD: mods and patches. Unticking one turns it
         // off and keeps the file, so ticking it again costs nothing.
         public bool Toggle;
@@ -408,9 +413,9 @@ namespace ComfyLauncher
             return new List<Row> { behind ? Update : Play };
         }
 
-        public List<Row> TabRows(string tab) => Rows.Where(r => r.Tab == tab).ToList();
+        public List<Row> TabRows(string tab) => Rows.Where(r => r.Tab == tab && !r.Hidden).ToList();
 
-        public List<Row> Stops(string tab) => Rows.Where(r => r.Tab == tab && r.Kind != RowKind.Label).ToList();
+        public List<Row> Stops(string tab) => Rows.Where(r => r.Tab == tab && !r.Hidden && r.Kind != RowKind.Label).ToList();
 
         public int CursorOn(string tab)
         {
@@ -430,10 +435,14 @@ namespace ComfyLauncher
         // In list order, which puts every row after what it needs.
         public IEnumerable<Row> Pending() => Rows.Where(r => r.Action != "");
 
-        public int PendingOn(string tab) => Rows.Count(r => r.Tab == tab && r.Action != "");
+        public int PendingOn(string tab) => Rows.Count(r => r.Tab == tab && !r.Hidden && r.Action != "");
 
         // The rows that need this one, directly.
         public IEnumerable<Row> Dependents(Row row) => Rows.Where(r => r.AllNeeds.Contains(row));
+
+        // The name a player knows a row by: a hidden row is named for the
+        // first row that needs it.
+        public string Shown(Row row) => row.Hidden ? Dependents(row).FirstOrDefault()?.Label ?? row.Label : row.Label;
 
         // TWO PACKAGES CLASH when they write the same patch file, which no
         // manifest can overrule, or when either declares the other.
@@ -515,6 +524,10 @@ namespace ComfyLauncher
                 also.Add(dep);
                 also.AddRange(TickOff(dep));
             }
+            // A hidden part goes with the last ticked row that needs it. The
+            // flash does not name it, and ticking the row brings it back.
+            foreach (var need in row.AllNeeds.Where(n => n.Hidden && n.On && !Dependents(n).Any(d => d.On)).ToList())
+                TickOff(need);
             return also;
         }
 

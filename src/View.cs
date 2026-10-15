@@ -133,14 +133,17 @@ namespace ComfyLauncher
                 return row.PartOf == "ComfyCraft"
                     ? row.Label + " comes with ComfyCraft and is always on."
                     : row.Label + " is turned on and off with " + row.PartOf + ", on the Mods tab.";
-            string parts = row.PartsNow;
+            // A hidden row it needs is part of it: its files are listed here.
+            var hidden = row.AllNeeds.Where(n => n.Hidden).ToList();
+            string parts = string.Join(", ", new[] { row.PartsNow }.Concat(hidden.Select(n => n.PartsNow)).Where(p => p != ""));
             if (parts == "") return "";
             string text = row.Label + ": " + parts;
-            if (row.Kb > 0) text += ", " + Size(row.Kb);
+            int kb = row.Kb + hidden.Sum(n => n.Kb);
+            if (kb > 0) text += ", " + Size(kb);
             text += ".";
-            var needs = row.AllNeeds.Select(n => n.Label).ToList();
+            var needs = row.AllNeeds.Where(n => !n.Hidden).Select(n => n.Label).ToList();
             // DXVK is a .dll too, but the game loads it from beside WoW.exe.
-            if (row.Builds == null && (row.Parts.Contains(".dll") || (row.ChoiceParts?.Any(p => p.Contains(".dll")) ?? false)))
+            if (row.Builds == null && (parts.Contains(".dll") || (row.ChoiceParts?.Any(p => p.Contains(".dll")) ?? false)))
                 needs.Add("VanillaFixes");
             if (needs.Count > 0) text += " Needs " + string.Join(" and ", needs) + ".";
             // Before the advice: a narrow window cuts the end of this line, and
@@ -203,7 +206,7 @@ namespace ComfyLauncher
                 // label says it.
                 if (row == app.Update && !app.FirstInstall)
                     label += "  " + string.Join(", ", (app.SelfBehind ? new[] { "the launcher" } : new string[0])
-                                                          .Concat(app.Rows.Where(app.NeedsUpdate).Select(r => r.Label)));
+                                                          .Concat(app.Rows.Where(app.NeedsUpdate).Select(app.Shown).Distinct()));
                 int after = s.Put(MarkX, y, Cut(label, statusX - MarkX - 2), ink);
                 // The game, when it is already running or stuck closing.
                 if (row == app.Play && app.GameNote != "")

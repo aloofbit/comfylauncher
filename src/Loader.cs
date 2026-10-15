@@ -266,6 +266,7 @@ namespace ComfyLauncher
                 row.PartList = ModParts(mod);
                 row.StateKey = "mod:" + file;
                 row.Version = mod.Str("version");
+                row.Hidden = mod.Bool("hidden");
                 // A MOD THAT REPLACED OTHERS names their files and add-on folders (2026-10-06: comfyatmos.dll took the
                 // place of comfyfog.dll and comfygrass.dll). Their dlls.txt lines are this mod's, not a stranger's.
                 row.SupersedesFiles.AddRange(mod.Strs("supersedes_files").Where(Safe.IsName));
@@ -532,6 +533,17 @@ namespace ComfyLauncher
             foreach (var row in packageRows.Where(r => r.On && r.Have == Have.Behind))
                 foreach (var need in row.AllNeeds.Where(n => !n.On).ToList())
                     app.TickOn(need, need.Choice);
+
+            // A HIDDEN ROW IS ON EXACTLY WHEN A TICKED ROW NEEDS IT. The
+            // player has no tick to fix it with: Saved accounts on with its
+            // DLL gone gets the DLL back, and the DLL left in dlls.txt after
+            // Saved accounts went off is switched off.
+            foreach (var row in app.Rows.Where(r => r.Hidden).ToList())
+            {
+                bool wanted = app.Dependents(row).Any(d => d.On);
+                if (wanted && !row.On) app.TickOn(row, row.Choice);
+                else if (!wanted && row.On) app.TickOff(row);
+            }
 
             // ---- Addons: the ones a package owns, then the player's own,
             // then what this launcher set aside.
