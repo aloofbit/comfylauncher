@@ -290,11 +290,11 @@
     "hidden": true,
     "file": "comfylogin.dll",
     "note": "keeps the saved accounts list and its passwords",
-    "version": "v0.2.2-alpha",
+    "version": "v0.2.3-alpha",
     "from": "https://github.com/aloofbit/comfylogin",
-    "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.2-alpha/comfylogin.zip",
-    "sha256": "cc7abeb37b3bc453dd392e6f8d17928f0bb29bef07796bf8a80e1cc4c19753bc",
-    "file_sha256": "ef33182016ddc1903d33bf16278f713e392836484bad52f8ce923b0cf7adf830",
+    "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.3-alpha/comfylogin.zip",
+    "sha256": "f34a0b414bb3c256a7475f8b2ef9d108e55a56880d98f072b05955b2c569cd73",
+    "file_sha256": "667e2ece3c947bd19cb85a53aba13e4dfef2f126d6c6fa5153d33c1b422d3cde",
     "extract": {
       "comfylogin.dll": "comfylogin.dll"
     }

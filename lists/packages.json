@@ -50,7 +50,7 @@
           "conflicts": ["patch:Y"],
           "advice": "Passwords are kept in WTF\\comfylogin.txt, encrypted for your Windows user.",
           "parts": [
-            { "letter": "W", "size": 42751, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.2-alpha/comfylogin.zip", "zip": 144554, "crc32": "56aedd0b", "sha256": "7265500fcc30cbb7f535e442b4f4ea4c30c8bb704aec57ff2ecc825ca12594fd",
+            { "letter": "W", "size": 42751, "url": "https://github.com/aloofbit/comfylogin/releases/download/v0.2.3-alpha/comfylogin.zip", "zip": 144554, "crc32": "56aedd0b", "sha256": "7265500fcc30cbb7f535e442b4f4ea4c30c8bb704aec57ff2ecc825ca12594fd",
               "was": [34448, 36464, 39069, 40007] }
           ]
         }
