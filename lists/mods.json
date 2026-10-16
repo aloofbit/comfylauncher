@@ -56,11 +56,11 @@
   {
     "name": "Interact",
     "file": "Interact.dll",
-    "note": "a key that talks to whoever you are facing",
-    "version": "v1.0.4",
-    "from": "https://github.com/lookino/Interact",
-    "url": "https://github.com/lookino/Interact/releases/download/v1.0.4/Interact.zip",
-    "sha256": "f7104564f324f6a5486e80cb2c5133a6ebb462eed7877c2ad3429e88afb4ed37",
+    "note": "a key that loots, gathers, talks to whoever you are facing and catches your fish",
+    "version": "v0.1.0-alpha",
+    "from": "https://github.com/aloofbit/InteractNew",
+    "url": "https://github.com/aloofbit/InteractNew/releases/download/v0.1.0-alpha/Interact.zip",
+    "sha256": "3bf02d9f3150cd0f599e0595da3b0a4f561b90be2d5d683684bf7d6babaa17da",
     "extract": {
       "Interact.dll": "Interact.dll",
       "Interface/AddOns/Interact/": "Interface/AddOns/Interact/"
