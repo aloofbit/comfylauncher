@@ -771,6 +771,7 @@ namespace ComfyLauncher
             State["last"] = Client.Root;
             var settings = State.Obj("settings") ?? new Dictionary<string, object>();
             settings["clearCache"] = Setting("clear-cache");
+            settings["stayIn"] = Setting("stay-in");
             settings["autoStart"] = Setting("auto-start");
             settings["music"] = Setting("music");
             State["settings"] = settings;
@@ -1023,6 +1024,9 @@ namespace ComfyLauncher
             var cache = Add("Settings", RowKind.Setting, "Clear the cache", "clears WDB folder on startup", on: true);
             cache.Id = "clear-cache";
             cache.Advice = "Deletes the WDB folder first, so item, creature and quest changes on the server show at once.";
+            var stay = Add("Settings", RowKind.Setting, "Stay logged in", "no logout after 30 minutes idle", on: true);
+            stay.Id = "stay-in";
+            stay.Advice = "Changes one byte in WoW.exe when the game starts. You still go AFK after 5 minutes.";
             var auto = Add("Settings", RowKind.Setting, "Autostart", "launch game after 8 seconds automatically");
             auto.Id = "auto-start";
             auto.Advice = "Any key stops the countdown.";

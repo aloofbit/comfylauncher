@@ -141,5 +141,63 @@ namespace ComfyLauncher
             try { game.WaitForExit(); }
             finally { ShowWindow(GetConsoleWindow(), 7); }   // shown, minimised, not active
         }
+
+        // THE IDLE LOGOUT. WoW.exe logs the player out after 30 minutes with
+        // no input. The check is at 0x482EDE in the octow exes:
+        //   add eax, -1800000 / test eax, eax / jl <set AFK> / call ...
+        // The jl taken always (7C to EB) means AFK at 5 minutes and no logout.
+        // Found by pattern, not address, since builds differ. No match, or two,
+        // means an exe we do not know, and it is left alone. The one byte is
+        // the whole change, so flipping it back restores the file exactly.
+        // docs/ai/tools/idle-logout.md in comfy-wow has how it was found.
+        static readonly byte[] IdleCheck = { 0x05, 0xC0, 0x88, 0xE4, 0xFF, 0x85, 0xC0 };
+        const byte Jl = 0x7C, Jmp = 0xEB;
+
+        // The offset of the jump byte, or -1.
+        static long IdleJump(byte[] exe)
+        {
+            long found = -1;
+            for (int i = 0; i + IdleCheck.Length + 3 <= exe.Length; i++)
+            {
+                int k = 0;
+                while (k < IdleCheck.Length && exe[i + k] == IdleCheck[k]) k++;
+                if (k < IdleCheck.Length) continue;
+                int j = i + IdleCheck.Length;
+                if ((exe[j] != Jl && exe[j] != Jmp) || exe[j + 2] != 0xE8) continue;
+                if (found >= 0) return -1;
+                found = j;
+            }
+            return found;
+        }
+
+        // True when WoW.exe is known and its idle logout is not as wanted.
+        public static bool IdleLogoutNeedsChange(Client c, bool stayIn)
+        {
+            try
+            {
+                var exe = File.ReadAllBytes(c.PathOf("WoW.exe"));
+                long at = IdleJump(exe);
+                return at >= 0 && exe[at] != (stayIn ? Jmp : Jl);
+            }
+            catch { return false; }
+        }
+
+        // A failure is no reason to stop the game starting, so it only says so.
+        public static void SetIdleLogout(App app, bool stayIn)
+        {
+            try
+            {
+                string path = app.Client.PathOf("WoW.exe");
+                var exe = File.ReadAllBytes(path);
+                long at = IdleJump(exe);
+                if (at < 0) return;
+                using (var f = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.Read))
+                {
+                    f.Position = at;
+                    f.WriteByte(stayIn ? Jmp : Jl);
+                }
+            }
+            catch (Exception e) { app.Flash = "WoW.exe could not be changed: " + e.Message; }
+        }
     }
 }

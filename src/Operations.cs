@@ -596,6 +596,9 @@ namespace ComfyLauncher
         {
             var ops = new List<Op>();
             if (app.Setting("clear-cache")) ops.Add(new Op { Text = @"delete the cache in WDB\", Run = _ => ClearWdb(app.Client) });
+            bool stayIn = app.Setting("stay-in");
+            if (Game.IdleLogoutNeedsChange(app.Client, stayIn))
+                ops.Add(new Op { Text = "WoW.exe: " + (stayIn ? "turn off" : "put back") + " the logout after 30 minutes idle", Run = _ => Game.SetIdleLogout(app, stayIn) });
             bool vf = File.Exists(app.Client.PathOf("VanillaFixes.exe"));
             ops.Add(new Op { Text = "start " + (vf ? "VanillaFixes.exe, which loads the mods in dlls.txt" : "WoW.exe"), Run = _ => Game.Start(app) });
             return ops;
