@@ -179,8 +179,8 @@ function Get-FileVersion([string] $Path) {
 # this script. `## X-Unlisted: 1` is the only one so far: it means BUILT AND
 # PUBLISHED, BUT NOT OFFERED. The zip is made and uploaded, so the addon has a
 # stable URL to hand to somebody working on the project; what it does not get
-# is a manifest ITEM, so the launcher draws no row for it and /play does not
-# list it, and it stays out of the drop-in zip.
+# is a manifest ITEM, so /play does not list it and it stays out of the drop-in
+# zip. The launcher draws its row only in a client that already has the folder.
 #
 # ComfyHousingDev is the one, and it is 147 MB of Catalogue-tab thumbnails.
 # Worth its size to somebody building the world, and nothing to somebody who
@@ -264,7 +264,12 @@ if (@($found).Count -eq 0) { Write-Item "none found in $Addons" }
 $unlistedNames = @{}
 $unlistedUrls  = @{}
 
-# THE SAME ENTRIES AGAIN, KEPT FOR THE MANIFEST, AND THIS IS NOT FOR A READER.
+# THE SAME ENTRIES AGAIN, KEPT FOR THE MANIFEST. Two readers.
+#
+# The launcher (since 1.38) treats each one as an item, but only in a client
+# that already has the folder: that is how a copy somebody was handed gets
+# updates, the same way as ComfyUI. A client without the folder sees nothing.
+#
 # deploy\Update-Server.ps1 decides whether to upload dist\ at all by hashing
 # manifest.json, on the reasoning that every url, sha256, size and version in
 # the folder is in that file. Unlisted broke that quietly: with nothing of
@@ -273,9 +278,7 @@ $unlistedUrls  = @{}
 # zip under a URL that still worked. Nothing anywhere said so.
 #
 # So they go in under a key of their own. `items` stays the list of what is
-# OFFERED -- the launcher's rows, /play, the drop-in zip all read that and only
-# that -- and `unlisted` is inert, read by nothing, there so the manifest
-# describes the whole folder again.
+# OFFERED to everybody; /play and the drop-in zip read only that.
 $unlistedItems = New-Object System.Collections.ArrayList
 
 foreach ($addon in $found) {
@@ -982,10 +985,10 @@ Write-Item $path
 Write-Item ("{0} items, {1}" -f @($items).Count,
     (Format-Size ((Get-ChildItem -LiteralPath $files -File | Measure-Object Length -Sum).Sum)))
 # THE PRINTED URL IS THE ONLY WAY ANYBODY IS GIVEN AN UNLISTED ADDON. It is on
-# no page and in no launcher row by design, so if this build does not print it,
-# the addon is effectively gone. Hand it to somebody working on the project;
-# they unzip it into Interface\AddOns themselves. It IS in the manifest, under
-# `unlisted`, which is a fingerprint and not an offer: unlisted is unlisted the
+# no page by design, so if this build does not print it, the addon is
+# effectively gone. Hand it to somebody working on the project; they unzip it
+# into Interface\AddOns themselves, and from then on the launcher updates it.
+# It IS in the manifest, under `unlisted`, which is not an offer: unlisted is unlisted the
 # way a video is, not the way a password is, and anybody reading manifest.json
 # could have guessed files\<Name>.zip anyway.
 if (@($unlistedNames.Keys).Count -gt 0) {

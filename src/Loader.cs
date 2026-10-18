@@ -158,12 +158,17 @@ namespace ComfyLauncher
             Heading("Mods", "ComfyCraft");
             var claimedLetters = new HashSet<char>();
             var claimedAddons = new List<(string Folder, Row Owner, string OwnerName)>();
-            foreach (var item in manifest.Objs("items"))
+            // UNLISTED ADDONS UPDATE LIKE ANY ITEM, but only where the client
+            // already has the folder: somebody was handed the link. Nothing
+            // offers one to a client without it.
+            var unlisted = manifest.Objs("unlisted");
+            foreach (var item in manifest.Objs("items").Concat(unlisted))
             {
                 string name = item.Str("name"), kind = item.Str("kind");
                 // A name or path that would land outside its folder is left
                 // out, as if the manifest had not named it. See Safe.
                 if (kind == "addon" ? !Safe.IsName(name) : !Safe.IsRelative(item.Str("path"))) continue;
+                if (unlisted.Contains(item) && (kind != "addon" || !Directory.Exists(client.AddonPath(name)))) continue;
                 var part = new Part { Url = Absolute(manifestUrl, item.Str("url")), Sha256 = item.Str("sha256"), Size = item.Long("size") };
                 string target;
                 bool offOnDisk = false;
