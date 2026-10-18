@@ -374,6 +374,7 @@ namespace ComfyLauncher
         // The work Enter started. One row at a time; Tick advances it.
         public readonly Queue<Row> Work = new Queue<Row>();
         public Row Working;
+        public string Stage;    // "unpacking" while the working row's download is being unpacked
         public bool PlayAfterWork;
         public bool IsBusy => Working != null || Work.Count > 0;
 
@@ -565,7 +566,8 @@ namespace ComfyLauncher
                     long done = System.Threading.Interlocked.Read(ref jobDone);
                     double p = jobTotal > 0 ? (double)done / jobTotal : (double)jobOpsDone / Math.Max(1, jobOps);
                     Working.Progress = Math.Min(1.0, p);
-                    Working.Busy = jobTotal > 0 ? $"{(int)(Working.Progress * 100),3}%" : Working.Action == "remove" ? "removing" : "moving";
+                    Stage = jobList.Select(o => o.Stage).FirstOrDefault(s => s != null);
+                    Working.Busy = Stage ?? (jobTotal > 0 ? $"{(int)(Working.Progress * 100),3}%" : Working.Action == "remove" ? "removing" : "moving");
                 }
                 return;
             }
@@ -589,6 +591,7 @@ namespace ComfyLauncher
                 row.Progress = null;
                 row.Busy = null;
                 Working = null;
+                Stage = null;
                 if (failed != null)
                 {
                     // A FAILED STEP STOPS THE BATCH: what follows may need it.
@@ -642,6 +645,7 @@ namespace ComfyLauncher
                 {
                     long start = jobBase;
                     op.Run(b => System.Threading.Interlocked.Exchange(ref jobDone, start + b));
+                    op.Stage = null;
                     jobBase += op.Bytes > 0 ? op.Bytes : System.Threading.Interlocked.Read(ref op.Learned);
                     System.Threading.Interlocked.Exchange(ref jobDone, jobBase);
                     jobOpsDone++;

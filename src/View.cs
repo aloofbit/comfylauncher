@@ -173,7 +173,7 @@ namespace ComfyLauncher
                 double p = app.BatchProgress;
                 s.Put(MarkX, y, app.StopRequested ? "Stopping" : app.FirstInstall ? "Installing" : "Updating", ink);
                 s.Put(NoteX, y, Bar(p, app.BatchKb * p, app.BatchKb, noteWidth), Ink.Cyan);
-                s.Put(statusX, y, $"{(int)(p * 100),3}%", Ink.Cyan);
+                s.Put(statusX, y, app.Stage ?? $"{(int)(p * 100),3}%", Ink.Cyan);
                 return;
             }
 

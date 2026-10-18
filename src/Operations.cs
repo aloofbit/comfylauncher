@@ -16,6 +16,7 @@ namespace ComfyLauncher
         public long Bytes;                   // a download's size, for the progress bar
         public long Learned;                 // for Bytes 0: the size the host gave, set by the worker
         public Action<Action<long>> Run;     // reports bytes done
+        public volatile string Stage;        // set by the worker after the download, shown in place of the percentage
     }
 
     static class Operations
@@ -165,12 +166,15 @@ namespace ComfyLauncher
                         else if (p.Type == PartType.Addon)
                         {
                             var part = p;
-                            ops.Add(new Op
+                            // UNPACKING IS THE SLOW HALF of a big addon: ComfyHousingDev's
+                            // 9,276 files take 11 s after the download reads 100%.
+                            var op = new Op
                             {
                                 Text = "download " + part.Url + (part.Extract != "" ? ", take " + part.Extract : "") + ", put it at " + Rel(app, addon),
                                 Bytes = part.Size,
-                                Run = progress => InstallAddon(app, Fetch(part, progress), part, addon),
-                            });
+                            };
+                            op.Run = progress => { string zip = Fetch(part, progress); op.Stage = "unpacking"; InstallAddon(app, zip, part, addon); };
+                            ops.Add(op);
                         }
                         else
                         {
