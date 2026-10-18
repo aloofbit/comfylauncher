@@ -158,6 +158,7 @@ namespace ComfyLauncher
             Heading("Mods", "ComfyCraft");
             var claimedLetters = new HashSet<char>();
             var claimedAddons = new List<(string Folder, Row Owner, string OwnerName)>();
+            var ourAddons = new List<Row>();
             // UNLISTED ADDONS UPDATE LIKE ANY ITEM, but only where the client
             // already has the folder: somebody was handed the link. Nothing
             // offers one to a client without it.
@@ -229,6 +230,9 @@ namespace ComfyLauncher
                 row.SizeKb = (int)(part.Size / 1024);
                 if (part.Type == PartType.Addon) claimedAddons.Add((name, row, "ComfyCraft"));
                 foreach (var old in item.Strs("supersedes")) claimedAddons.Add((old, row, "ComfyCraft, which replaced it"));
+                // AN ADDON GOES ON THE ADDONS TAB, in its own ComfyCraft
+                // section, drawn below. Mods holds patches and DLLs.
+                if (part.Type == PartType.Addon) { app.Rows.Remove(row); row.Tab = "Addons"; ourAddons.Add(row); }
             }
 
             // ---- Mods: client mods, ours in the ComfyCraft section and the
@@ -559,6 +563,11 @@ namespace ComfyLauncher
                 Add("Addons", RowKind.Add, "Find an addon", "search addon list").Id = "find-addon";
             }
             Add("Addons", RowKind.Add, "Add an addon", "paste link to GitHub or to a .zip");
+            if (ourAddons.Count > 0)
+            {
+                Heading("Addons", "ComfyCraft");
+                app.Rows.AddRange(ourAddons);
+            }
             // An addon a package owns shows when it is on the disk, or when its
             // package is on and will put it there. A name ComfyUI replaced
             // shows only when an old copy is still on the disk. One that went
@@ -567,7 +576,10 @@ namespace ComfyLauncher
             // it back without the DLL it needs.
             var setAside = client.AsideAddons.Keys.ToList();
             bool OwnedAside(string folder) => app.Rows.Any(r => r.PartList.Any(p => p.OffWithMod && p.Name.Equals(folder, StringComparison.OrdinalIgnoreCase)));
-            var owned = claimedAddons.Where(c => client.AddOns.Any(a => a.Equals(c.Folder, StringComparison.OrdinalIgnoreCase))
+            // A ComfyCraft addon has its own row above, so it is not listed
+            // again here; a folder it replaced still is.
+            var owned = claimedAddons.Where(c => !ourAddons.Contains(c.Owner) || c.OwnerName != "ComfyCraft")
+                                     .Where(c => client.AddOns.Any(a => a.Equals(c.Folder, StringComparison.OrdinalIgnoreCase))
                                                  || (c.Owner.On && !c.OwnerName.Contains("replaced"))
                                                  || (setAside.Contains(c.Folder, StringComparer.OrdinalIgnoreCase) && OwnedAside(c.Folder))).ToList();
             if (owned.Count > 0)
