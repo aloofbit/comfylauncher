@@ -169,7 +169,8 @@ namespace ComfyLauncher
                 // A name or path that would land outside its folder is left
                 // out, as if the manifest had not named it. See Safe.
                 if (kind == "addon" ? !Safe.IsName(name) : !Safe.IsRelative(item.Str("path"))) continue;
-                if (unlisted.Contains(item) && (kind != "addon" || !Directory.Exists(client.AddonPath(name)))) continue;
+                bool isUnlisted = unlisted.Contains(item);
+                if (isUnlisted && (kind != "addon" || !Directory.Exists(client.AddonPath(name)))) continue;
                 var part = new Part { Url = Absolute(manifestUrl, item.Str("url")), Sha256 = item.Str("sha256"), Size = item.Long("size") };
                 string target;
                 bool offOnDisk = false;
@@ -216,7 +217,9 @@ namespace ComfyLauncher
 
                 // A note that only repeats the label says nothing.
                 string note = item.Str("note").Equals(label, StringComparison.OrdinalIgnoreCase) ? "" : item.Str("note");
-                var row = Add("Mods", RowKind.Required, label, note);
+                // Not required: unticking an unlisted addon deletes it, and
+                // with the folder gone the row is not drawn again.
+                var row = Add("Mods", isUnlisted ? RowKind.Check : RowKind.Required, label, note);
                 row.Id = "item:" + name;
                 row.StateKey = name;
                 row.Recorded = have != "";
