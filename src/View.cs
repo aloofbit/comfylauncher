@@ -171,9 +171,16 @@ namespace ComfyLauncher
             if (row == app.Update && app.IsBusy)
             {
                 double p = app.BatchProgress;
-                s.Put(MarkX, y, app.StopRequested ? "Stopping" : app.FirstInstall ? "Installing" : "Updating", ink);
+                // NAMED FOR THE ROW AT WORK: adding an addon is not an update.
+                string doing = app.Working?.Action;
+                string verb = app.FirstInstall || doing == "install" || doing == "reinstall" ? "Installing"
+                            : doing == "remove" ? "Removing" : "Updating";
+                // A word the row shows in place of its percentage (unpacking,
+                // removing) shows here too: the batch sits still meanwhile.
+                string busy = app.Working?.Busy;
+                s.Put(MarkX, y, app.StopRequested ? "Stopping" : verb, ink);
                 s.Put(NoteX, y, Bar(p, app.BatchKb * p, app.BatchKb, noteWidth), Ink.Cyan);
-                s.Put(statusX, y, app.Stage ?? $"{(int)(p * 100),3}%", Ink.Cyan);
+                s.Put(statusX, y, busy != null && !busy.EndsWith("%") ? busy : $"{(int)(p * 100),3}%", Ink.Cyan);
                 return;
             }
 

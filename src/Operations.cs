@@ -512,12 +512,12 @@ namespace ComfyLauncher
             // The size is not known until the host answers, so the op learns
             // it during the download, and the work loop sizes the row then.
             var op = new Op { Text = "download " + urls[0] + (urls.Count > 1 ? " (or main.zip)" : "") + ", put every addon in it in Interface\\AddOns" };
-            op.Run = progress => InstallFromZip(app, urls, progress, t => System.Threading.Interlocked.Exchange(ref op.Learned, t));
+            op.Run = progress => InstallFromZip(app, urls, progress, t => System.Threading.Interlocked.Exchange(ref op.Learned, t), () => op.Stage = "unpacking");
             row.Custom = new List<Op> { op };
             return row;
         }
 
-        static void InstallFromZip(App app, List<string> urls, Action<long> progress, Action<long> total)
+        static void InstallFromZip(App app, List<string> urls, Action<long> progress, Action<long> total, Action unpacking)
         {
             string downloads = Path.Combine(app.Home, "downloads"), zip = Path.Combine(downloads, "added-addon.zip");
             Exception last = null;
@@ -536,6 +536,7 @@ namespace ComfyLauncher
             if (!got) throw new IOException("could not download that; check the link" + (last != null ? " (" + last.Message + ")" : ""));
             if (File.Exists(zip)) File.Delete(zip);
             File.Move(zip + ".part", zip);
+            unpacking();
 
             string work = Path.Combine(app.Home, "work", "added");
             if (Directory.Exists(work)) Directory.Delete(work, true);
