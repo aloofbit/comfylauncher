@@ -16,19 +16,7 @@ Little launcher project for smol server. Thanks for seeing.
 
 ### Mac
 
-ComfyLauncher runs inside [WoWSilicon](https://github.com/WoWSilicon/WoWSilicon) on Apple Silicon Macs.
-
-1. Install WoWSilicon, choose your WoW folder and apply its game patch
-2. Extract `ComfyLauncher.zip` into your WoW folder
-3. Install Wine Mono one time. Download `wine-mono-11.2.0-x86.msi` from [wine-mono](https://github.com/madewokherd/wine-mono/releases), open WoWSilicon's Wine terminal and run:
-   ```
-   wine msiexec /i ~/Downloads/wine-mono-11.2.0-x86.msi
-   ```
-4. In WoWSilicon, set the launcher to `ComfyLauncher.exe` in your WoW folder
-5. Start the launcher from WoWSilicon and press Make a Mac app, under Start the game
-6. From then on, open ComfyLauncher from Applications. After a WoWSilicon update, do step 5 again
-
-Start the game starts the game the same way as WoWSilicon's Play button. Mods that WoWSilicon moved into `mods` show as installed.
+ComfyLauncher runs on Apple Silicon Macs inside [WoWSilicon](https://github.com/WoWSilicon/WoWSilicon). See [Install on a Mac](install-mac.md).
 
 ## Features
 
