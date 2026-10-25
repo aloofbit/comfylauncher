@@ -361,6 +361,14 @@ namespace ComfyLauncher
                 return;
             }
 
+            if (row.Id == WoWSilicon.MacAppId)
+            {
+                if (Program.Scripted) { app.Flash = "made ComfyLauncher.app"; return; }
+                try { app.Flash = "made " + WoWSilicon.MakeApp(app.Client); app.MacApp.Label = "Update the Mac app"; }
+                catch (Exception e) { app.Flash = "no Mac app: " + e.Message; }
+                return;
+            }
+
             if (row.Kind == RowKind.Part) { app.Flash = "that is part of " + row.PartOf + ", on the Mods tab"; return; }
             if (row.Kind == RowKind.Link)
             {

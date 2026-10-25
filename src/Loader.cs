@@ -641,6 +641,9 @@ namespace ComfyLauncher
             var folder = Add("Settings", RowKind.Link, "Open the WoW folder", client.Root);
             folder.Id = "open-folder";
             folder.Url = client.Root;
+            // Not when the Mac app started it: that app is made already.
+            app.OfferMacApp = client.WoWSilicon && Environment.GetEnvironmentVariable(WoWSilicon.FromAppVariable) == null;
+            if (app.OfferMacApp && WoWSilicon.AppExists()) app.MacApp.Label = "Update the Mac app";
             Display.AddRows(app, client, t => Heading("Settings", t));
 
             App.DeriveWrites(app);

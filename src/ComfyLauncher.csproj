@@ -39,4 +39,9 @@
     <Reference Include="System.Management" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The icon again, as a file: Make a Mac app turns it into the .app's icon. 39 KB. -->
+    <EmbeddedResource Include="ComfyLauncher.ico" LogicalName="ComfyLauncher.ico" />
+  </ItemGroup>
+
 </Project>

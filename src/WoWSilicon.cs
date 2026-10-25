@@ -82,19 +82,7 @@ namespace ComfyLauncher
             var launch = new Launch { Exe = c.PathOf("WoW.exe") };
             try
             {
-                string home = Environment.GetEnvironmentVariable("WINE_HOST_HOME") ?? Environment.GetEnvironmentVariable("HOME");
-                if (string.IsNullOrEmpty(home) || !home.StartsWith("/")) return launch;
-                string file = "Z:" + home.Replace('/', '\\') + @"\Library\Application Support\WoWSilicon\versions.json";
-                if (!File.Exists(file)) return launch;
-                var store = Json.Parse(File.ReadAllText(file));
-                var versions = store?.Obj("versions");
-                if (versions == null) return launch;
-                string root = Unix(c.Root)?.TrimEnd('/') ?? "";
-                Dictionary<string, object> profile = null;
-                foreach (var kv in versions)
-                    if (kv.Value is Dictionary<string, object> v && v.Str("game_path").TrimEnd('/').Equals(root, StringComparison.OrdinalIgnoreCase)) { profile = v; break; }
-                if (profile == null) profile = versions.Obj(store.Str("currentVersionID"));
-                var settings = profile?.Obj("settings");
+                var settings = Profile(c)?.Obj("settings");
                 if (settings == null) return launch;
 
                 if (settings.Bool("enableVanillaTweaks") && File.Exists(c.PathOf("WoW_tweaked.exe")))
@@ -108,6 +96,27 @@ namespace ComfyLauncher
             }
             catch { }
             return launch;
+        }
+
+        // The profile in ~/Library/Application Support/WoWSilicon/versions.json
+        // whose game_path is this client, else the current one, or null.
+        static Dictionary<string, object> Profile(Client c)
+        {
+            try
+            {
+                string home = Environment.GetEnvironmentVariable("WINE_HOST_HOME") ?? Environment.GetEnvironmentVariable("HOME");
+                if (string.IsNullOrEmpty(home) || !home.StartsWith("/")) return null;
+                string file = "Z:" + home.Replace('/', '\\') + @"\Library\Application Support\WoWSilicon\versions.json";
+                if (!File.Exists(file)) return null;
+                var store = Json.Parse(File.ReadAllText(file));
+                var versions = store?.Obj("versions");
+                if (versions == null) return null;
+                string root = Unix(c.Root)?.TrimEnd('/') ?? "";
+                foreach (var kv in versions)
+                    if (kv.Value is Dictionary<string, object> v && v.Str("game_path").TrimEnd('/').Equals(root, StringComparison.OrdinalIgnoreCase)) return v;
+                return versions.Obj(store.Str("currentVersionID"));
+            }
+            catch { return null; }
         }
 
         // The helper inside WoWSilicon.app, found from the Wine running this
@@ -159,16 +168,10 @@ namespace ComfyLauncher
 
         static string Quote(string s) => "'" + s.Replace("'", "'\\''") + "'";
 
-        // The game, started through the Mac's shell. Throws when it cannot.
-        public static void Start(Client c, Launch launch)
+        // A line for the Mac's /bin/sh, waited for or not. Throws when the
+        // shell does not start.
+        static void Shell(string line, bool wait)
         {
-            string wine = WineLoader() ?? throw new IOException("Wine's own path is not known (no WINELOADER), so the game cannot start as WoWSilicon does");
-            string dir = Unix(c.Root) ?? throw new IOException("the client's Mac path is not known");
-            string exe = Unix(launch.Exe) ?? throw new IOException("the game's Mac path is not known");
-            string line = "cd " + Quote(dir) + " && "
-                        + (launch.X87Key != "" ? launch.X87Key + "=" + Quote(launch.X87Path) + " " : "")
-                        + "exec " + Quote(wine) + " " + Quote(exe);
-
             var args = new[] { "/bin/sh", "-c", line };
             var argv = new IntPtr[args.Length + 1];
             try
@@ -179,7 +182,7 @@ namespace ComfyLauncher
                     argv[i] = Marshal.AllocHGlobal(bytes.Length);
                     Marshal.Copy(bytes, 0, argv[i], bytes.Length);
                 }
-                int status = UnixSpawn(argv, 0);
+                int status = UnixSpawn(argv, wait ? 1 : 0);
                 if (status != 0) throw new IOException("the Mac shell did not start (status 0x" + status.ToString("x8") + ")");
             }
             finally
@@ -187,5 +190,182 @@ namespace ComfyLauncher
                 foreach (var p in argv) if (p != IntPtr.Zero) Marshal.FreeHGlobal(p);
             }
         }
+
+        // DYLD_ SETTINGS GO IN THE LINE. macOS takes them out of the
+        // environment of /bin/sh and every other system binary, so a shell
+        // passes them on only when it sets them itself. Wine copied them into
+        // the Windows environment when this launcher started.
+        static string DyldAssignments() =>
+            string.Concat(new[] { "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH" }
+                .Select(k => (k, v: Environment.GetEnvironmentVariable(k)))
+                .Where(x => !string.IsNullOrEmpty(x.v))
+                .Select(x => x.k + "=" + Quote(x.v) + " "));
+
+        // The game, started through the Mac's shell. Throws when it cannot.
+        public static void Start(Client c, Launch launch)
+        {
+            string wine = WineLoader() ?? throw new IOException("Wine's own path is not known (no WINELOADER), so the game cannot start as WoWSilicon does");
+            string dir = Unix(c.Root) ?? throw new IOException("the client's Mac path is not known");
+            string exe = Unix(launch.Exe) ?? throw new IOException("the game's Mac path is not known");
+            Shell("cd " + Quote(dir) + " && "
+                  + DyldAssignments()
+                  + (launch.X87Key != "" ? launch.X87Key + "=" + Quote(launch.X87Path) + " " : "")
+                  + "exec " + Quote(wine) + " " + Quote(exe), wait: false);
+        }
+
+        // ---- THE MAC APP: ComfyLauncher without opening WoWSilicon first.
+        //
+        // A script in an .app that starts this exe with WoWSilicon's Wine and
+        // the settings WoWSilicon started it with, so nothing of WoWSilicon's
+        // logic is copied: after a WoWSilicon update the player presses the
+        // button again. Made on the Mac, so it carries no quarantine flag and
+        // Gatekeeper does not ask.
+        //
+        // THE SETTINGS COME FROM THE REAL MAC ENVIRONMENT, read with env through
+        // the shell: Wine leaves VK_ variables out of the Windows one
+        // (is_ignored_env_var, dlls/ntdll/unix/env.c), and WoWSilicon sets
+        // VK_DRIVER_FILES for KosmicKrisp. Only what WoWSilicon adds is kept;
+        // the rest is the login session's, which the app gets from Finder,
+        // and Wine's own (WINELOADERNOEXEC and the like) would change how a
+        // fresh wine starts.
+
+        public const string MacAppId = "mac-app";
+        const string BundleId = "com.comfycraft.launcher";
+        // Set by the app's script, so the launcher it starts does not offer
+        // to make the app again.
+        public const string FromAppVariable = "COMFYLAUNCHER_MAC_APP";
+
+        // The two places MakeApp writes, as Windows paths.
+        static IEnumerable<string> AppPlaces()
+        {
+            yield return @"Z:\Applications\ComfyLauncher.app";
+            string home = Environment.GetEnvironmentVariable("WINE_HOST_HOME");
+            if (!string.IsNullOrEmpty(home)) yield return "Z:" + home.Replace('/', '\\') + @"\Applications\ComfyLauncher.app";
+        }
+
+        public static bool AppExists() =>
+            AppPlaces().Any(a => { try { string p = Path.Combine(a, @"Contents\Info.plist"); return File.Exists(p) && File.ReadAllText(p).Contains(BundleId); } catch { return false; } });
+
+        static readonly string[] KeepNames = { "WINEPREFIX", "WINEDLLOVERRIDES", "WINE_LARGE_ADDRESS_AWARE", "WINE_D3D_CONFIG", "WINEESYNC", "WINEMSYNC" };
+        static readonly string[] KeepPrefixes = { "VK_", "MVK_", "MTL_", "DXVK_", "WOWSILICON_" };
+
+        // Makes the app and returns where it went, as a Mac path.
+        public static string MakeApp(Client c)
+        {
+            string wine = WineLoader() ?? throw new IOException("Wine's own path is not known (no WINELOADER)");
+            string dir = Unix(c.Root) ?? throw new IOException("the client's Mac path is not known");
+            string exe = Unix(SelfUpdate.Exe) ?? throw new IOException("the launcher's Mac path is not known");
+            string home = Environment.GetEnvironmentVariable("WINE_HOST_HOME") ?? throw new IOException("the Mac home folder is not known");
+
+            var env = MacEnvironment(c);
+            if (!env.ContainsKey("WINEPREFIX")) throw new IOException("the launcher was not started by WoWSilicon (no WINEPREFIX), so there are no settings to keep");
+            foreach (var k in new[] { "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH" })
+            {
+                string v = Environment.GetEnvironmentVariable(k);
+                if (!string.IsNullOrEmpty(v)) env[k] = v;
+            }
+
+            // /Applications when it can be written, which it can for an admin
+            // account, else the home folder's Applications.
+            string app = null;
+            foreach (var dos in AppPlaces())
+            {
+                try
+                {
+                    string plist = Path.Combine(dos, @"Contents\Info.plist");
+                    if (File.Exists(plist) && !File.ReadAllText(plist).Contains(BundleId)) continue;
+                    Directory.CreateDirectory(Path.Combine(dos, @"Contents\MacOS"));
+                    Directory.CreateDirectory(Path.Combine(dos, @"Contents\Resources"));
+                    app = dos;
+                    break;
+                }
+                catch (UnauthorizedAccessException) { }
+                catch (IOException) { }
+            }
+            if (app == null) throw new IOException("ComfyLauncher.app could not be written in /Applications or " + home + "/Applications");
+
+            var utf8 = new UTF8Encoding(false);
+            File.WriteAllText(Path.Combine(app, @"Contents\Info.plist"), InfoPlist, utf8);
+
+            var script = new StringBuilder();
+            script.Append("#!/bin/bash\n");
+            script.Append("# ComfyLauncher through WoWSilicon's Wine. Made by ComfyLauncher " + SelfUpdate.Version + " on " + DateTime.Now.ToString("yyyy-MM-dd") + ",\n");
+            script.Append("# with the settings WoWSilicon started it with. After a WoWSilicon update,\n");
+            script.Append("# start the launcher from WoWSilicon once and press Make a Mac app again.\n");
+            script.Append("WINE=" + Quote(wine) + "\n");
+            script.Append("EXE=" + Quote(exe) + "\n");
+            script.Append("fail() { osascript -e \"display dialog \\\"$1\\\" with title \\\"ComfyLauncher\\\" buttons {\\\"OK\\\"} default button 1 with icon caution\" >/dev/null; exit 1; }\n");
+            script.Append("[ -x \"$WINE\" ] || fail \"The Wine from WoWSilicon is not where it was. Start ComfyLauncher from WoWSilicon once, then press Make a Mac app in its Settings tab.\"\n");
+            script.Append("[ -f \"$EXE\" ] || fail \"ComfyLauncher.exe is not where it was. Start ComfyLauncher from WoWSilicon once, then press Make a Mac app in its Settings tab.\"\n");
+            foreach (var kv in env.OrderBy(k => k.Key, StringComparer.Ordinal))
+                script.Append("export " + kv.Key + "=" + Quote(kv.Value) + "\n");
+            script.Append("export " + FromAppVariable + "=1\n");
+            script.Append("cd " + Quote(dir) + " || exit 1\n");
+            script.Append("exec \"$WINE\" \"$EXE\"\n");
+            File.WriteAllText(Path.Combine(app, @"Contents\MacOS\ComfyLauncher"), script.ToString(), utf8);
+
+            using (var ico = typeof(WoWSilicon).Assembly.GetManifestResourceStream("ComfyLauncher.ico"))
+            using (var to = File.Create(Path.Combine(app, @"Contents\Resources\ComfyLauncher.ico")))
+                ico.CopyTo(to);
+
+            // The script's executable flag, and the icon in the form macOS
+            // reads. A file Wine writes has no executable flag.
+            string macApp = app.Substring(2).Replace('\\', '/');
+            string res = macApp + "/Contents/Resources";
+            Shell("chmod 755 " + Quote(macApp + "/Contents/MacOS/ComfyLauncher")
+                  + " && sips -s format png " + Quote(res + "/ComfyLauncher.ico") + " --out " + Quote(res + "/icon.png") + " >/dev/null 2>&1"
+                  + " && sips -z 512 512 " + Quote(res + "/icon.png") + " >/dev/null 2>&1"
+                  + " && sips -s format icns " + Quote(res + "/icon.png") + " --out " + Quote(res + "/ComfyLauncher.icns") + " >/dev/null 2>&1"
+                  + "; rm -f " + Quote(res + "/icon.png") + " " + Quote(res + "/ComfyLauncher.ico")
+                  + "; touch " + Quote(macApp), wait: true);
+            return macApp;
+        }
+
+        // What WoWSilicon added to this launcher's Mac environment: its own
+        // names, and the names in the profile's own environment variables.
+        static Dictionary<string, string> MacEnvironment(Client c)
+        {
+            string tempDos = Path.Combine(Path.GetTempPath(), "comfylauncher-env.txt");
+            string temp = Unix(tempDos) ?? throw new IOException("the temporary folder's Mac path is not known");
+            if (File.Exists(tempDos)) File.Delete(tempDos);
+            Shell("/usr/bin/env -0 > " + Quote(temp), wait: true);
+            if (!File.Exists(tempDos)) throw new IOException("the Mac environment could not be read");
+            string all = File.ReadAllText(tempDos, Encoding.UTF8);
+            File.Delete(tempDos);
+
+            var custom = new HashSet<string>(ProfileVariableNames(c), StringComparer.Ordinal);
+            var keep = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var pair in all.Split('\0'))
+            {
+                int eq = pair.IndexOf('=');
+                if (eq <= 0) continue;
+                string k = pair.Substring(0, eq), v = pair.Substring(eq + 1);
+                if (KeepNames.Contains(k) || KeepPrefixes.Any(k.StartsWith) || custom.Contains(k)) keep[k] = v;
+            }
+            return keep;
+        }
+
+        // The names in the WoWSilicon profile's environment variables box,
+        // which it passes to the launcher too.
+        static IEnumerable<string> ProfileVariableNames(Client c)
+        {
+            var settings = Profile(c)?.Obj("settings");
+            string text = settings?.Str("environmentVariables") ?? "";
+            return System.Text.RegularExpressions.Regex.Matches(text, @"([A-Za-z_][A-Za-z0-9_]*)=")
+                .Cast<System.Text.RegularExpressions.Match>().Select(m => m.Groups[1].Value);
+        }
+
+        const string InfoPlist =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n" +
+            "<plist version=\"1.0\">\n<dict>\n" +
+            "\t<key>CFBundleName</key>\n\t<string>ComfyLauncher</string>\n" +
+            "\t<key>CFBundleDisplayName</key>\n\t<string>ComfyLauncher</string>\n" +
+            "\t<key>CFBundleIdentifier</key>\n\t<string>" + BundleId + "</string>\n" +
+            "\t<key>CFBundleExecutable</key>\n\t<string>ComfyLauncher</string>\n" +
+            "\t<key>CFBundleIconFile</key>\n\t<string>ComfyLauncher</string>\n" +
+            "\t<key>CFBundlePackageType</key>\n\t<string>APPL</string>\n" +
+            "\t<key>LSMinimumSystemVersion</key>\n\t<string>14.0</string>\n" +
+            "</dict>\n</plist>\n";
     }
 }

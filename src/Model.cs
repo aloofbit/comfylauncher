@@ -362,6 +362,11 @@ namespace ComfyLauncher
         public readonly List<Row> Rows = new List<Row>();
         public readonly Row Play   = new Row { Id = "play",   Kind = RowKind.Button, Label = "Start the game" };
         public readonly Row Update = new Row { Id = "update", Kind = RowKind.Button, Label = "Update available" };
+        // UNDER THE MAIN BUTTON when WoWSilicon started the launcher, the
+        // first thing a Mac player wants once it works (see WoWSilicon).
+        public readonly Row MacApp = new Row { Id = WoWSilicon.MacAppId, Kind = RowKind.Button, Label = "Make a Mac app",
+                                                Advice = "Puts ComfyLauncher.app in Applications, which opens the launcher without WoWSilicon. Press it again after a WoWSilicon update." };
+        public bool OfferMacApp;
 
         public int Tab;
         public readonly Dictionary<string, int> Cursor = new Dictionary<string, int>();
@@ -410,8 +415,9 @@ namespace ComfyLauncher
             Update.Label = UpdateFailed ? "Try the update again" : FirstInstall ? "Install ComfyCraft" : "Update available";
             Play.Label = behind && UpdateFailed ? "Start anyway" : "Start the game";
             if (IsBusy) return new List<Row> { Update };
-            if (behind && UpdateFailed) return new List<Row> { Play, Update };
-            return new List<Row> { behind ? Update : Play };
+            var buttons = behind && UpdateFailed ? new List<Row> { Play, Update } : new List<Row> { behind ? Update : Play };
+            if (OfferMacApp) buttons.Add(MacApp);
+            return buttons;
         }
 
         public List<Row> TabRows(string tab) => Rows.Where(r => r.Tab == tab && !r.Hidden).ToList();
