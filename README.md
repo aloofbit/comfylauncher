@@ -25,7 +25,8 @@ ComfyLauncher runs inside [WoWSilicon](https://github.com/WoWSilicon/WoWSilicon)
    wine msiexec /i ~/Downloads/wine-mono-11.2.0-x86.msi
    ```
 4. In WoWSilicon, set the launcher to `ComfyLauncher.exe` in your WoW folder
-5. Start the launcher from WoWSilicon
+5. Start the launcher from WoWSilicon and press Make a Mac app, under Start the game
+6. From then on, open ComfyLauncher from Applications. After a WoWSilicon update, do step 5 again
 
 Start the game starts the game the same way as WoWSilicon's Play button. Mods that WoWSilicon moved into `mods` show as installed.
 
