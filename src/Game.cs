@@ -13,7 +13,7 @@ namespace ComfyLauncher
     // from ComfyLauncher.ps1's Test-ClientRunning and Start-Game.
     static class Game
     {
-        static readonly string[] Names = { "WoW", "WoW_untweaked", "SuperWoWlauncher", "VanillaFixes" };
+        static readonly string[] Names = { "WoW", "WoW_untweaked", "WoW_tweaked", "SuperWoWlauncher", "VanillaFixes" };
 
         [DllImport("kernel32.dll")] static extern IntPtr OpenProcess(int access, bool inherit, int pid);
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern bool QueryFullProcessImageName(IntPtr h, int flags, StringBuilder name, ref int size);
@@ -115,16 +115,19 @@ namespace ComfyLauncher
         // VanillaFixes when the client has it, since it loads the mods; then
         // the console hides until the game closes. Steam counts the game as
         // running while this process lives, which is what keeps the overlay.
-        public static void Start(App app)
+        // ON A WoWSilicon CLIENT, the launch WoWSilicon.Plan made.
+        public static void Start(App app, WoWSilicon.Launch launch = null)
         {
             if (Program.Scripted) return;
             Music.Set(false);   // the game has its own
             var c = app.Client;
-            string exe = new[] { "VanillaFixes.exe", "WoW.exe" }.Select(c.PathOf).FirstOrDefault(File.Exists);
-            if (exe == null) throw new IOException("nothing to start: no VanillaFixes.exe and no WoW.exe");
+            string exe = launch?.Exe ?? new[] { "VanillaFixes.exe", "WoW.exe" }.Select(c.PathOf).FirstOrDefault(File.Exists);
+            if (exe == null || !File.Exists(exe)) throw new IOException("nothing to start: no VanillaFixes.exe and no WoW.exe");
+            string name = launch != null ? Path.GetFileNameWithoutExtension(exe) : "WoW";
 
-            var before = Process.GetProcessesByName("WoW").Select(p => p.Id).ToList();
-            Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = c.Root, UseShellExecute = false });
+            var before = Process.GetProcessesByName(name).Select(p => p.Id).ToList();
+            if (launch != null) WoWSilicon.Start(c, launch);
+            else Process.Start(new ProcessStartInfo(exe) { WorkingDirectory = c.Root, UseShellExecute = false });
 
             // The new WoW.exe, within two minutes; VanillaFixes itself exits
             // once it has started the game.
@@ -132,7 +135,7 @@ namespace ComfyLauncher
             var giveUp = DateTime.Now.AddSeconds(120);
             while (game == null && DateTime.Now < giveUp)
             {
-                game = Process.GetProcessesByName("WoW").FirstOrDefault(p => !before.Contains(p.Id));
+                game = Process.GetProcessesByName(name).FirstOrDefault(p => !before.Contains(p.Id));
                 if (game == null) Thread.Sleep(400);
             }
             if (game == null) return;

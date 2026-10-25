@@ -604,6 +604,12 @@ namespace ComfyLauncher
             bool stayIn = app.Setting("stay-in");
             if (Game.IdleLogoutNeedsChange(app.Client, stayIn))
                 ops.Add(new Op { Text = "WoW.exe: " + (stayIn ? "turn off" : "put back") + " the logout after 30 minutes idle", Run = _ => Game.SetIdleLogout(app, stayIn) });
+            if (app.Client.WoWSilicon)
+            {
+                var launch = WoWSilicon.Plan(app.Client);
+                ops.Add(new Op { Text = launch.Text, Run = _ => Game.Start(app, launch) });
+                return ops;
+            }
             bool vf = File.Exists(app.Client.PathOf("VanillaFixes.exe"));
             ops.Add(new Op { Text = "start " + (vf ? "VanillaFixes.exe, which loads the mods in dlls.txt" : "WoW.exe"), Run = _ => Game.Start(app) });
             return ops;
@@ -671,11 +677,11 @@ namespace ComfyLauncher
         {
             string path = c.PathOf("dlls.txt");
             var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : new List<string>();
-            var output = lines.Where(l => !disable.Any(d => l.Trim().Equals(d, StringComparison.OrdinalIgnoreCase))).ToList();
+            var output = lines.Where(l => !disable.Any(d => c.IsLine(l, d))).ToList();
             foreach (var e in enable)
-                if (!output.Any(l => l.Trim().Equals(e, StringComparison.OrdinalIgnoreCase))) output.Add(e);
+                if (!output.Any(l => c.IsLine(l, e))) output.Add(e);
             File.WriteAllText(path, string.Join("\r\n", output) + "\r\n", Encoding.ASCII);
-            c.EnabledDlls = output.Select(l => l.Trim()).Where(t => t != "" && !t.StartsWith("#") && !t.StartsWith(";")).ToList();
+            c.EnabledDlls = c.Entries(output);
         }
 
         // Config.wtf's SET lines: replaced where they are, added where they

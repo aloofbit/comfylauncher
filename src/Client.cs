@@ -25,6 +25,12 @@ namespace ComfyLauncher
         public List<string> DllLines = new List<string>();
         public List<string> EnabledDlls = new List<string>();
         public bool HasDllsFile;
+
+        // A client WoWSilicon patched (see WoWSilicon), and the mod DLLs it
+        // moved into mods\, by bare name. EnabledDlls holds those by bare
+        // name too, and PathOf finds them in mods\.
+        public bool WoWSilicon;
+        public Dictionary<string, string> InMods = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<char, DiskPatch> Patches = new Dictionary<char, DiskPatch>();
 
         // WHAT THE LAUNCHER SET ASIDE, NEXT TO WHAT IT REPLACED, since
@@ -148,7 +154,32 @@ namespace ComfyLauncher
         }
 
         // Inside the client or refused: see Safe.
-        public string PathOf(string relative) => Safe.Join(Root, relative);
+        public string PathOf(string relative) =>
+            Safe.Join(Root, InMods.TryGetValue(relative, out var moved) ? moved : relative);
+
+        // The live lines of dlls.txt. On a WoWSilicon client a mods/<name>
+        // line is <name>, and WoWSilicon's own lines are left out.
+        public List<string> Entries(IEnumerable<string> lines)
+        {
+            var entries = new List<string>();
+            foreach (var line in lines)
+            {
+                string t = line.Trim();
+                if (t == "" || t.StartsWith("#") || t.StartsWith(";")) continue;
+                string moved = WoWSilicon ? ComfyLauncher.WoWSilicon.ModsName(t) : null;
+                if (moved == null) { entries.Add(t); continue; }
+                if (ComfyLauncher.WoWSilicon.Own(moved)) continue;
+                if (File.Exists(Safe.Join(Root, @"mods\" + moved))) InMods[moved] = @"mods\" + moved;
+                entries.Add(moved);
+            }
+            return entries;
+        }
+
+        // A dlls.txt line that is this entry: the name, or mods/<name> on a
+        // WoWSilicon client.
+        public bool IsLine(string line, string entry) =>
+            line.Trim().Equals(entry, StringComparison.OrdinalIgnoreCase)
+            || (WoWSilicon && (ComfyLauncher.WoWSilicon.ModsName(line) ?? "").Equals(entry, StringComparison.OrdinalIgnoreCase));
 
         // A full path as the screen shows it: inside the client, from its root.
         public string Rel(string full) =>
@@ -166,12 +197,9 @@ namespace ComfyLauncher
             {
                 c.HasDllsFile = true;
                 c.DllLines = File.ReadAllLines(dlls).ToList();
-                foreach (var line in c.DllLines)
-                {
-                    string t = line.Trim();
-                    if (t != "" && !t.StartsWith("#") && !t.StartsWith(";")) c.EnabledDlls.Add(t);
-                }
             }
+            c.WoWSilicon = ComfyLauncher.WoWSilicon.Is(c);
+            c.EnabledDlls = c.Entries(c.DllLines);
 
             string data = c.PathOf("Data");
             if (Directory.Exists(data))

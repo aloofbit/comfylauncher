@@ -23,6 +23,7 @@ namespace ComfyLauncher
     //   --dry-run            Enter shows the file operations and does none
     //   --running            print each game process and its path, and quit
     //   --classic-console    draw with the console calls Wine uses, on Windows too
+    //   --wowsilicon         read the client as a WoWSilicon one, on Windows too
     //
     // The .ps1 launcher's own arguments are accepted, because the last .ps1
     // launcher restarts into this exe with them: a client folder, -Source <url>,
@@ -49,6 +50,8 @@ namespace ComfyLauncher
             }
 
             // The launcher's tune, written to a .wav to listen to.
+            WoWSilicon.Force = args.Contains("--wowsilicon");
+
             if (Arg("--music-wav") != null)
             {
                 Music.Save(Arg("--music-wav"));

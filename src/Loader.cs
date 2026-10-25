@@ -265,6 +265,8 @@ namespace ComfyLauncher
                 // WHOLE, NOT ONLY THE EXE: VfPatcher.dll is what loads the
                 // mods, and antivirus takes either one. Without them the game
                 // starts as WoW.exe with no mod in it.
+                // NOT ON A WoWSilicon CLIENT: the game loads dlls.txt itself there.
+                if (!inject && client.WoWSilicon) continue;
                 var fileParts = !inject ? ModParts(mod).Where(p => p.Type == PartType.Dll || p.Type == PartType.File).Select(p => p.Name).ToList() : null;
                 var lost = !inject ? fileParts.Where(f => !File.Exists(client.PathOf(f))).ToList() : null;
                 if (!inject && lost.Count == 0) continue;
@@ -671,6 +673,8 @@ namespace ComfyLauncher
         {
             string file = spec.Str("file");
             if (!Safe.IsName(file)) return null;
+            // A WoWSilicon client's d3d9.dll is WoWSilicon's, made for the Mac.
+            if (client.WoWSilicon) return null;
             var known = spec.Objs("builds").Select(b => new Build
             {
                 Name = b.Str("name"), Note = b.Str("note"), Sha256 = b.Str("sha256"), Url = b.Str("url"), Size = b.Long("size"),
