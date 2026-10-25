@@ -134,6 +134,8 @@ namespace ComfyLauncher
                 return row.PartOf == "ComfyCraft"
                     ? row.Label + " comes with ComfyCraft and is always on."
                     : row.Label + " is turned on and off with " + row.PartOf + ", on the Mods tab.";
+            if (row.Builds != null && !row.On)
+                return "DXVK off: the game draws with Direct3D 9. Space picks a build.";
             // A hidden row it needs is part of it: its files are listed here.
             var hidden = row.AllNeeds.Where(n => n.Hidden).ToList();
             string parts = string.Join(", ", new[] { row.PartsNow }.Concat(hidden.Select(n => n.PartsNow)).Where(p => p != ""));
@@ -258,10 +260,15 @@ namespace ComfyLauncher
                     //
                     // BEING ADJUSTED, the brackets turn into arrows: they say
                     // Left and Right change this now, not the tab.
-                    if (row.Choices != null && row.On)
+                    //
+                    // DXVK OFF IS A VALUE IN ITS LIST, the one after the last
+                    // build: Space steps there and on to the first. Shown as
+                    // nothing, players took the list to have no off.
+                    if (row.Choices != null && (row.On || row.Builds != null))
                     {
                         bool editing = app.Editing == row;
-                        string value = editing ? "◄ " + row.Choices[row.Choice] + " ►" : "< " + row.Choices[row.Choice] + " >";
+                        string chosen = row.On ? row.Choices[row.Choice] : "off";
+                        string value = editing ? "◄ " + chosen + " ►" : "< " + chosen + " >";
                         x = s.Put(x, y, value, editing ? Ink.White : selected ? Ink.Cyan : ink);
                         x += 2;
                     }
