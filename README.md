@@ -14,6 +14,21 @@ Little launcher project for smol server. Thanks for seeing.
 2. Extract into your WoW folder
 3. Open `ComfyLauncher.exe`
 
+### Mac
+
+ComfyLauncher runs inside [WoWSilicon](https://github.com/WoWSilicon/WoWSilicon) on Apple Silicon Macs.
+
+1. Install WoWSilicon, choose your WoW folder and apply its game patch
+2. Extract `ComfyLauncher.zip` into your WoW folder
+3. Install Wine Mono one time. Download `wine-mono-11.2.0-x86.msi` from [wine-mono](https://github.com/madewokherd/wine-mono/releases), open WoWSilicon's Wine terminal and run:
+   ```
+   wine msiexec /i ~/Downloads/wine-mono-11.2.0-x86.msi
+   ```
+4. In WoWSilicon, set the launcher to `ComfyLauncher.exe` in your WoW folder
+5. Start the launcher from WoWSilicon
+
+Start the game starts the game the same way as WoWSilicon's Play button. Mods that WoWSilicon moved into `mods` show as installed.
+
 ## Features
 
 - Download/Install Mods
@@ -23,6 +38,7 @@ Little launcher project for smol server. Thanks for seeing.
 - Small File
 - Works through Steam overlay
 - Works on Linux through Proton or Wine
+- Works on Mac through WoWSilicon
 - Secret features :)
 
 ## Build
