@@ -1,0 +1,99 @@
+#!/bin/bash
+# ComfyLauncher.app's program. It starts ComfyLauncher.exe under the Wine that
+# the app carries, in the player's WoW folder.
+#
+# FIRST START:
+#   1. Rosetta 2 on Apple Silicon (Wine is Intel code).
+#   2. Wine, unpacked from Resources/wine.tar.xz into Application Support.
+#      The app itself is never written to: macOS can run a downloaded app
+#      from a random read-only copy (App Translocation), and a changed bundle
+#      reads as damaged.
+#   3. The Wine bottle, with Wine Mono for .NET, in Application Support.
+#   4. The WoW folder: the app's own folder when it holds WoW.exe, or one the
+#      player chooses. Saved in Application Support/wow-folder.
+#   5. ComfyLauncher.exe copied into the WoW folder when it has none. The
+#      launcher updates that copy itself, as on Windows.
+#
+# The log is ~/Library/Logs/ComfyLauncher.log.
+
+APP_SUPPORT="$HOME/Library/Application Support/ComfyLauncher"
+LOG="$HOME/Library/Logs/ComfyLauncher.log"
+RES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+APP="$(cd "$RES/../.." && pwd)"
+WINE_VERSION="$(cat "$RES/wine-version")"
+WINE_DIR="$APP_SUPPORT/wine-$WINE_VERSION"
+WINE="$WINE_DIR/wine/bin/wine"
+SAVED="$APP_SUPPORT/wow-folder"
+
+export WINEPREFIX="$APP_SUPPORT/bottle"
+export WINEDEBUG="fixme-all"
+# No Gecko download prompt: the launcher draws no web pages.
+export WINEDLLOVERRIDES="mshtml="
+
+mkdir -p "$APP_SUPPORT" "$(dirname "$LOG")"
+exec >>"$LOG" 2>&1
+echo "=== $(date) ComfyLauncher.app, Wine $WINE_VERSION, macOS $(sw_vers -productVersion), $(uname -m)"
+
+say() { osascript -e "display dialog \"$1\" with title \"ComfyLauncher\" buttons {\"OK\"} default button 1 with icon caution" >/dev/null; }
+note() { osascript -e "display notification \"$1\" with title \"ComfyLauncher\""; }
+fail() { echo "FAIL: $1"; say "$1\n\nThe log is ~/Library/Logs/ComfyLauncher.log."; exit 1; }
+
+# 1. Rosetta 2.
+if [ "$(uname -m)" = "arm64" ] && ! /usr/bin/arch -x86_64 /usr/bin/true 2>/dev/null; then
+    osascript -e 'display dialog "ComfyLauncher needs Rosetta 2 from Apple to run Wine. Install it now?" with title "ComfyLauncher" buttons {"Cancel", "Install"} default button 2' >/dev/null || exit 0
+    osascript -e 'do shell script "/usr/sbin/softwareupdate --install-rosetta --agree-to-license" with administrator privileges' \
+        || fail "Rosetta 2 did not install."
+fi
+
+# 2. Wine. Unpacked to a temporary name first, so a stopped unpack is never
+# taken for a whole one.
+if [ ! -x "$WINE" ]; then
+    note "Setting up Wine. The first start takes a minute or two."
+    rm -rf "$WINE_DIR.part"
+    mkdir -p "$WINE_DIR.part"
+    tar -xJf "$RES/wine.tar.xz" -C "$WINE_DIR.part" || fail "Wine did not unpack."
+    # tar copies the download's quarantine flag onto what it unpacks.
+    xattr -dr com.apple.quarantine "$WINE_DIR.part" 2>/dev/null
+    rm -rf "$WINE_DIR"
+    mv "$WINE_DIR.part" "$WINE_DIR" || fail "Wine could not be moved into place."
+    # Older Wine versions this app unpacked.
+    for old in "$APP_SUPPORT"/wine-*; do
+        [ "$old" != "$WINE_DIR" ] && rm -rf "$old"
+    done
+fi
+
+# 3. The bottle. wineboot makes it and installs Wine Mono from the copy in
+# wine/share/wine/mono. The console size is the launcher's own, 100 x 34.
+if [ ! -f "$WINEPREFIX/system.reg" ]; then
+    note "Making the Wine bottle. This takes about a minute."
+    "$WINE" wineboot --init || fail "The Wine bottle could not be made."
+    "$WINE_DIR/wine/bin/wineserver" -w
+    "$WINE" reg add 'HKCU\Console' /v WindowSize /t REG_DWORD /d 0x00220064 /f
+    "$WINE" reg add 'HKCU\Console' /v ScreenBufferSize /t REG_DWORD /d 0x00220064 /f
+    "$WINE_DIR/wine/bin/wineserver" -w
+fi
+
+# 4. The WoW folder.
+has_wow() { [ -n "$1" ] && [ -f "$1/WoW.exe" ]; }
+WOW="$(cat "$SAVED" 2>/dev/null)"
+if ! has_wow "$WOW"; then
+    WOW="$(dirname "$APP")"
+    has_wow "$WOW" || WOW=""
+fi
+while ! has_wow "$WOW"; do
+    WOW="$(osascript -e 'POSIX path of (choose folder with prompt "Choose your Turtle WoW folder, the one that holds WoW.exe.")')" || exit 0
+    WOW="${WOW%/}"
+    has_wow "$WOW" || say "That folder holds no WoW.exe. Choose the folder that WoW.exe is in."
+done
+printf '%s' "$WOW" > "$SAVED"
+
+# 5. The launcher.
+if [ ! -f "$WOW/ComfyLauncher.exe" ]; then
+    cp "$RES/ComfyLauncher.exe" "$WOW/ComfyLauncher.exe" || fail "ComfyLauncher.exe could not be copied into $WOW."
+fi
+
+# start gives the launcher a console window of its own. The launcher starts
+# the game in the same Wine.
+echo "starting $WOW/ComfyLauncher.exe"
+cd "$WOW" || fail "$WOW could not be opened."
+"$WINE" start /unix "$WOW/ComfyLauncher.exe" || fail "Wine could not start ComfyLauncher.exe."
