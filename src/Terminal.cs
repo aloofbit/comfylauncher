@@ -62,6 +62,27 @@ namespace ComfyLauncher
         // Wine's ntdll exports wine_get_version; Windows' does not.
         public static readonly bool UnderWine = GetProcAddress(GetModuleHandle("ntdll.dll"), "wine_get_version") != IntPtr.Zero;
 
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+        [DllImport("kernel32.dll")]
+        static extern bool FreeConsole();
+        [DllImport("kernel32.dll")]
+        static extern bool AllocConsole();
+
+        // A CONSOLE WITH NO WINDOW, UNDER WINE. A Mac launcher that runs
+        // `wine ComfyLauncher.exe` with its output thrown away (WoWSilicon's
+        // launcher slot) gives the exe a console that Wine never shows, so
+        // the launcher ran and nobody saw it. It opens a window of its own,
+        // at the launcher's size. Before anything reads Console, which keeps
+        // the handles it first finds.
+        public static void EnsureWindow()
+        {
+            if (!UnderWine || GetConsoleWindow() != IntPtr.Zero) return;
+            FreeConsole();
+            if (!AllocConsole()) return;
+            try { Console.SetBufferSize(100, 34); Console.SetWindowSize(100, 34); } catch { }
+        }
+
         // Set by --classic-console, before Enter.
         public static bool ForceClassic;
 

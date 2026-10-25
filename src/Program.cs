@@ -68,6 +68,7 @@ namespace ComfyLauncher
                 // A start that shows a window says what it is doing while the
                 // window is still blank, and logs how long each step took.
                 bool live = !args.Contains("--keys") && !args.Contains("--dump");
+                if (live) Terminal.EnsureWindow();
                 StartLog.Begin(live);
                 StartLog.Say("ComfyCraft Launcher " + SelfUpdate.Version + ": loading");
                 if (!args.Contains("--keys")) SelfUpdate.CleanUp();
