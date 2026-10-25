@@ -1,13 +1,15 @@
 # Builds ComfyLauncher-mac.zip on a Mac, from the ComfyLauncher.exe of a
 # release. See mac/Build-MacApp.sh.
 #
-# A published release: the zip is attached to that release.
 # Run by hand with a tag: the zip is a build artifact only, for a test.
+# NOT RUN ON A RELEASE: the app opens the launcher, but the game does not
+# start in its plain Wine (VanillaFixes cannot load the DLLs, and the client
+# crashes on an instruction Rosetta cannot run). Mac players use WoWSilicon,
+# with ComfyLauncher.exe in its launcher slot. Add `release: types:
+# [published]` back when the app starts the game.
 name: Mac app
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
