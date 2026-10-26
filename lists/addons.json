@@ -2143,22 +2143,22 @@
   },
   {
     "name": "Mail",
-    "repo": "https://github.com/EinBaum/Mail",
+    "repo": "https://github.com/Thrunk112/Mail",
     "category": "Economy",
     "description": "Easier mailbox management in WoW. Mail is a newer rewrite of Postal, both are by the same dev Shirsig.",
     "source": "turtle_wiki",
     "folder": "Mail",
     "forks": [
       {
-        "label": "Thrunk112",
-        "repo": "https://github.com/Thrunk112/Mail"
+        "label": "EinBaum",
+        "repo": "https://github.com/EinBaum/Mail"
       },
       {
         "label": "bradleeharr",
         "repo": "https://github.com/bradleeharr/Mail"
       }
     ],
-    "release_downloads_repo": "EinBaum/Mail",
+    "release_downloads_repo": "Thrunk112/Mail",
     "release_downloads_state": "none",
     "release_downloads": 0,
     "release_downloads_at": "2026-08-26T23:44:09Z"
