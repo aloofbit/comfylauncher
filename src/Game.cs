@@ -121,6 +121,7 @@ namespace ComfyLauncher
             if (Program.Scripted) return;
             Music.Set(false);   // the game has its own
             var c = app.Client;
+            if (c.DllEnabled("VanillaMultiMonitorFix.dll")) MonitorFile(app);
             string exe = launch?.Exe ?? new[] { "VanillaFixes.exe", "WoW.exe" }.Select(c.PathOf).FirstOrDefault(File.Exists);
             if (exe == null || !File.Exists(exe)) throw new IOException("nothing to start: no VanillaFixes.exe and no WoW.exe");
             string name = launch != null ? Path.GetFileNameWithoutExtension(exe) : "WoW";
@@ -143,6 +144,20 @@ namespace ComfyLauncher
             ShowWindow(GetConsoleWindow(), 0);   // hide
             try { game.WaitForExit(); }
             finally { ShowWindow(GetConsoleWindow(), 7); }   // shown, minimised, not active
+        }
+
+        // VanillaMultiMonitorFix does not load without VMMFix_preferred_monitor.txt
+        // in the game's folder, and VanillaFixes then stops the start with "DLL
+        // entry point returned an error (0)". A fresh client has no such file.
+        // 0 is the main monitor. A file that is there is the player's, and stays.
+        static void MonitorFile(App app)
+        {
+            try
+            {
+                string path = Path.Combine(app.Client.Root, "VMMFix_preferred_monitor.txt");
+                if (!File.Exists(path)) File.WriteAllText(path, "0\n");
+            }
+            catch (Exception e) { app.Flash = "VMMFix_preferred_monitor.txt could not be written: " + e.Message; }
         }
 
         // THE IDLE LOGOUT. WoW.exe logs the player out after 30 minutes with
