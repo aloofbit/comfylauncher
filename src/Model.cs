@@ -291,6 +291,8 @@ namespace ComfyLauncher
         public Dictionary<string, object> State = new Dictionary<string, object>();
         public string StateFile => System.IO.Path.Combine(Home, "comfylauncher.json");
         public string Source = "";      // where the manifest came from, for the dry run
+        public string Built = "";       // the manifest's build time, for the client report
+        public Dictionary<string, object> Base;  // the manifest's base download, for the client report
         public string CatalogUrl = "";  // dist\addons.json, when the manifest names one
         public List<CatalogEntry> Catalog;   // fetched when the search first opens
         public List<string> Notes = new List<string>();  // what loading had to say

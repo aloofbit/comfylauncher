@@ -188,6 +188,19 @@ namespace ComfyLauncher
             return found;
         }
 
+        // The SHA-256 of an exe with the idle byte as it ships (jl), and
+        // whether the file has the other one: what the client report compares
+        // with the base download.
+        public static (string Sha, bool Changed) ShippedSha(string path)
+        {
+            var exe = File.ReadAllBytes(path);
+            long at = IdleJump(exe);
+            bool changed = at >= 0 && exe[at] == Jmp;
+            if (changed) exe[at] = Jl;
+            using (var h = System.Security.Cryptography.SHA256.Create())
+                return (BitConverter.ToString(h.ComputeHash(exe)).Replace("-", "").ToLowerInvariant(), changed);
+        }
+
         // True when WoW.exe is known and its idle logout is not as wanted.
         public static bool IdleLogoutNeedsChange(Client c, bool stayIn)
         {

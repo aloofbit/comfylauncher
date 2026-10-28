@@ -369,6 +369,18 @@ namespace ComfyLauncher
                 return;
             }
 
+            if (row.Id == Defender.Id)
+            {
+                app.Flash = Program.Scripted ? "added the WoW folder to Defender's exclusions" : Defender.Exclude(app);
+                return;
+            }
+
+            if (row.Id == Report.Id)
+            {
+                app.Flash = Program.Scripted ? @"report copied, and saved in Logs\" : Report.Run(app);
+                return;
+            }
+
             if (row.Kind == RowKind.Part) { app.Flash = "that is part of " + row.PartOf + ", on the Mods tab"; return; }
             if (row.Kind == RowKind.Link)
             {

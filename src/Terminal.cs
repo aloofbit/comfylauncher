@@ -62,6 +62,20 @@ namespace ComfyLauncher
         // Wine's ntdll exports wine_get_version; Windows' does not.
         public static readonly bool UnderWine = GetProcAddress(GetModuleHandle("ntdll.dll"), "wine_get_version") != IntPtr.Zero;
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate IntPtr WineGetVersion();
+
+        // "9.0", or "?": for the client report.
+        public static string WineVersion()
+        {
+            try
+            {
+                IntPtr f = GetProcAddress(GetModuleHandle("ntdll.dll"), "wine_get_version");
+                if (f == IntPtr.Zero) return "?";
+                return Marshal.PtrToStringAnsi(Marshal.GetDelegateForFunctionPointer<WineGetVersion>(f)()) ?? "?";
+            }
+            catch { return "?"; }
+        }
+
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
         [DllImport("kernel32.dll")]
@@ -99,6 +113,58 @@ namespace ComfyLauncher
         static extern IntPtr GlobalLock(IntPtr hMem);
         [DllImport("kernel32.dll")]
         static extern bool GlobalUnlock(IntPtr hMem);
+        [DllImport("user32.dll")]
+        static extern bool EmptyClipboard();
+        [DllImport("user32.dll")]
+        static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GlobalAlloc(uint uFlags, UIntPtr dwBytes);
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GlobalFree(IntPtr hMem);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        static extern IntPtr CreateWindowEx(uint exStyle, string className, string windowName, uint style,
+            int x, int y, int width, int height, IntPtr parent, IntPtr menu, IntPtr instance, IntPtr param);
+        [DllImport("user32.dll")]
+        static extern bool DestroyWindow(IntPtr hWnd);
+
+        // Text onto the clipboard, with the same tries as ClipboardText. Once
+        // SetClipboardData takes the memory, Windows owns it.
+        //
+        // A WINDOW OF OUR OWN OPENS THE CLIPBOARD. With none, EmptyClipboard
+        // leaves no owner, and MSDN says SetClipboardData then fails. A
+        // message-only window (parent HWND_MESSAGE) is never drawn.
+        public static bool SetClipboardText(string text)
+        {
+            const uint UnicodeText = 13, Moveable = 0x0002;
+            IntPtr owner = CreateWindowEx(0, "STATIC", "", 0, 0, 0, 0, 0, new IntPtr(-3), IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            try { return SetClipboardText(text, owner, UnicodeText, Moveable); }
+            finally { if (owner != IntPtr.Zero) DestroyWindow(owner); }
+        }
+
+        static bool SetClipboardText(string text, IntPtr owner, uint UnicodeText, uint Moveable)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                if (!OpenClipboard(owner)) { System.Threading.Thread.Sleep(20); continue; }
+                try
+                {
+                    EmptyClipboard();
+                    var bytes = System.Text.Encoding.Unicode.GetBytes(text + "\0");
+                    IntPtr mem = GlobalAlloc(Moveable, (UIntPtr)bytes.Length);
+                    if (mem == IntPtr.Zero) return false;
+                    IntPtr p = GlobalLock(mem);
+                    if (p == IntPtr.Zero) { GlobalFree(mem); return false; }
+                    Marshal.Copy(bytes, 0, p, bytes.Length);
+                    GlobalUnlock(mem);
+                    if (SetClipboardData(UnicodeText, mem) != IntPtr.Zero) return true;
+                    GlobalFree(mem);
+                    return false;
+                }
+                finally { CloseClipboard(); }
+            }
+            return false;
+        }
 
         // THE CLIPBOARD'S TEXT, or "". Some consoles paste Ctrl+V as typed
         // characters, and others hand it over as the key itself, which the

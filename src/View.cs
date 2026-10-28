@@ -127,7 +127,7 @@ namespace ComfyLauncher
 
         public static string Detail(App app, Row row)
         {
-            if (row.Id == WoWSilicon.MacAppId) return row.Advice;
+            if (row.Id == WoWSilicon.MacAppId || row.Id == Defender.Id || row.Id == Report.Id) return row.Advice;
             if (row.Kind == RowKind.Link) return "Opens " + row.Url + (Keys.IsFolder(row) ? " in Explorer." : " in your browser.");
             if (row.Kind == RowKind.Setting || row.Kind == RowKind.Config || row.Id == Display.SaveId) return row.Advice;
             if (row.Kind == RowKind.Part)
@@ -453,6 +453,8 @@ namespace ComfyLauncher
             if (row.Kind == RowKind.Add) return "add";
             if (row.Kind == RowKind.Config) return row.Choices != null && row.Choices.Length > 1 ? "choose" : "";
             if (row.Id == WoWSilicon.MacAppId) return "make";
+            if (row.Id == Defender.Id) return "add";
+            if (row.Id == Report.Id) return "check";
             if (row.Kind == RowKind.Link) return "open";
             var plan = Keys.Plan(row);
             return plan.Count > 1 ? Summary(plan) : row.Action;

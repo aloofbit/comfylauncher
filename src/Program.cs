@@ -10,6 +10,7 @@ namespace ComfyLauncher
     // ComfyLauncher.exe --sample                    the fake data, for the key script tests
     // ComfyLauncher.exe --size 90x30 --keys right,down,space --dump
     //                                               no console: play the keys, print the frame
+    // ComfyLauncher.exe --client <folder> --report  print Check client's report
     //
     // --keys is the test seam. The same Keys.Handle and View.Render run as in
     // the real loop, into a Screen that is printed instead of shown, so a UI
@@ -70,7 +71,7 @@ namespace ComfyLauncher
             {
                 // A start that shows a window says what it is doing while the
                 // window is still blank, and logs how long each step took.
-                bool live = !args.Contains("--keys") && !args.Contains("--dump");
+                bool live = !args.Contains("--keys") && !args.Contains("--dump") && !args.Contains("--report");
                 if (live) Terminal.EnsureWindow();
                 StartLog.Begin(live);
                 StartLog.Say("ComfyCraft Launcher " + SelfUpdate.Version + ": loading");
@@ -127,6 +128,13 @@ namespace ComfyLauncher
 
             app.OnCountdownEnd = Keys.StartGame;
             app.Opened();
+
+            // Check client's report, printed: no clipboard, no file.
+            if (args.Contains("--report"))
+            {
+                Console.Write(Report.Build(app));
+                return 0;
+            }
             // What loading had to say, beside the button for the first key.
             if (app.Notes.Count > 0) app.Flash = string.Join("; ", app.Notes);
 
@@ -199,6 +207,7 @@ namespace ComfyLauncher
                 return 1;
             }
             if (app.Rows.Any(r => r.Id == "music" && r.On)) Music.Set(true);
+            if (app.Client != null && !Terminal.UnderWine) Defender.StartCheck(app.Client.Root);
             try
             {
                 bool dirty = true;
@@ -214,6 +223,7 @@ namespace ComfyLauncher
                     int ms = (int)clock.ElapsedMilliseconds;
                     clock.Restart();
                     if (app.CountdownMs != null) { app.Elapse(ms); dirty = true; }
+                    if (Defender.Apply(app) | Defender.ApplyExclude(app)) dirty = true;
                     if (dirty)
                     {
                         var frame = new Screen(w, h);

@@ -1,0 +1,168 @@
+﻿{
+    "name":  "OctoWoW 1.18.1 download",
+    "taken":  "2026-10-27",
+    "files":  [
+                  {
+                      "path":  "d3d9.dll",
+                      "size":  4501518,
+                      "sha256":  "a2cd6841e102f37189527c118ec416fa5071ac4d3120762973d9a0c6c5fd067e"
+                  },
+                  {
+                      "path":  "Data\\backup.MPQ",
+                      "size":  6354963
+                  },
+                  {
+                      "path":  "Data\\base.MPQ",
+                      "size":  12567654
+                  },
+                  {
+                      "path":  "Data\\Credits.html",
+                      "size":  28219
+                  },
+                  {
+                      "path":  "Data\\dbc.MPQ",
+                      "size":  4211367
+                  },
+                  {
+                      "path":  "Data\\fonts.MPQ",
+                      "size":  1284223
+                  },
+                  {
+                      "path":  "Data\\interface.MPQ",
+                      "size":  69710782
+                  },
+                  {
+                      "path":  "Data\\Interface\\Cinematics\\Logo_1024.avi",
+                      "size":  6506496
+                  },
+                  {
+                      "path":  "Data\\Interface\\Cinematics\\Logo_800.avi",
+                      "size":  4589568
+                  },
+                  {
+                      "path":  "Data\\Interface\\Cinematics\\WOW_Intro_1024.avi",
+                      "size":  47632384
+                  },
+                  {
+                      "path":  "Data\\Interface\\Cinematics\\WOW_Intro_800.avi",
+                      "size":  41175040
+                  },
+                  {
+                      "path":  "Data\\misc.MPQ",
+                      "size":  6611117
+                  },
+                  {
+                      "path":  "Data\\model.MPQ",
+                      "size":  191194646
+                  },
+                  {
+                      "path":  "Data\\patch.MPQ",
+                      "size":  1909274748
+                  },
+                  {
+                      "path":  "Data\\patch-1.mpq",
+                      "size":  293493217
+                  },
+                  {
+                      "path":  "Data\\patch-2.mpq",
+                      "size":  293360042
+                  },
+                  {
+                      "path":  "Data\\patch-3.mpq",
+                      "size":  2060279959
+                  },
+                  {
+                      "path":  "Data\\patch-4.mpq",
+                      "size":  1368080007
+                  },
+                  {
+                      "path":  "Data\\patch-5.mpq",
+                      "size":  59494929
+                  },
+                  {
+                      "path":  "Data\\sound.MPQ",
+                      "size":  709586366
+                  },
+                  {
+                      "path":  "Data\\speech.MPQ",
+                      "size":  229169392
+                  },
+                  {
+                      "path":  "Data\\terrain.MPQ",
+                      "size":  1099751861
+                  },
+                  {
+                      "path":  "Data\\texture.MPQ",
+                      "size":  664760752
+                  },
+                  {
+                      "path":  "Data\\wmo.MPQ",
+                      "size":  363610878
+                  },
+                  {
+                      "path":  "dbghelp.dll",
+                      "size":  1038848,
+                      "sha256":  "72877fb0af03745e2a78414ddaa05f1871703ad4c0d16d43d4ae62971ff52f0b"
+                  },
+                  {
+                      "path":  "DivxDecoder.dll",
+                      "size":  413696,
+                      "sha256":  "ed34d37b575c91a56704218eb9f6abbefda8b7de0e2ed44c96191abd0f9915a5"
+                  },
+                  {
+                      "path":  "fmod.dll",
+                      "size":  162816,
+                      "sha256":  "1e08da161cf78746304a834973971ee47a24817ee4e28df74e3f37dbbb383b22"
+                  },
+                  {
+                      "path":  "ijl15.dll",
+                      "size":  372736,
+                      "sha256":  "334aa12f7dee453d1c6cb1b661a3bb3494d3e4cc9c2ff3f9002064c78404e43a"
+                  },
+                  {
+                      "path":  "nampower.dll",
+                      "size":  829952,
+                      "sha256":  "b869f3a3b37114dbf12b299da05f913e25e9274fc903b7b3e62ab81ae0fb1bec"
+                  },
+                  {
+                      "path":  "transmogfix.dll",
+                      "size":  12800,
+                      "sha256":  "cd9e4c6ce033b0923cf045269f590f5e0b886bd03f43bd81406670d781452210"
+                  },
+                  {
+                      "path":  "unicows.dll",
+                      "size":  245408,
+                      "sha256":  "22f23cc65698741184ec34f46e6f69717644e0b5aabf5d5bd015101f2d72e56e"
+                  },
+                  {
+                      "path":  "UnitXP_SP3.dll",
+                      "size":  202240,
+                      "sha256":  "74a0a80aef02be28187fd67e9ec3945d54828ef3302a827754b4c40b69cdaed8"
+                  },
+                  {
+                      "path":  "VanillaFixes.exe",
+                      "size":  88576,
+                      "sha256":  "228d7bb5e3b5b0c2062d6c5f40c38c2a173e4c80d8a5d9e4077be800431b48a3"
+                  },
+                  {
+                      "path":  "VanillaHelpers.dll",
+                      "size":  254976,
+                      "sha256":  "1e74ddf6484c23482550d5f9e5f9d291085c4ac538d3b3ed9d87155521841196"
+                  },
+                  {
+                      "path":  "VanillaMultiMonitorFix.dll",
+                      "size":  28160,
+                      "sha256":  "7fa033e744c4b8794a4c97a45d563a8870264244bfa1e478a1c0f85e0c6e3371"
+                  },
+                  {
+                      "path":  "VfPatcher.dll",
+                      "size":  72704,
+                      "sha256":  "f283b6b5ad8042e7995eff9768c150042dd47de6e5f00ffe530d2e67743df81d"
+                  },
+                  {
+                      "path":  "WoW.exe",
+                      "size":  7024640,
+                      "sha256":  "5014ca1cfedf860f10e93fe7d955c56c28eb11a2bb503030dbb9b1c777f00470"
+                  }
+              ]
+}

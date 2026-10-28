@@ -756,6 +756,18 @@ if (Test-Path -LiteralPath $refFile) {
     Write-Item "none (write a client path into $refFile to enable the client check)"
 }
 
+# The base download, file by file, for the launcher's Check client report.
+# Written by Snapshot-Client.ps1 and tracked: a clean download is not kept on
+# this machine, and a played-in client is no reference.
+$baseClient = $null
+$baseFile = Join-Path $Here 'lists\base-client.json'
+if (Test-Path -LiteralPath $baseFile) {
+    $baseClient = Get-Content -LiteralPath $baseFile -Raw | ConvertFrom-Json
+    Write-Item ("base: {0}, {1} files, taken {2}" -f $baseClient.name, @($baseClient.files).Count, $baseClient.taken)
+} else {
+    Write-Item "no base (run Snapshot-Client.ps1 for the Check client report)"
+}
+
 # ------------------------------------------------------------- patch names
 # What each lettered MPQ usually is, so a client's Patches tab reads as words
 # rather than letters before anybody has typed anything. A GUESS, because
@@ -950,6 +962,7 @@ $manifest = [ordered]@{
         patches = @($bundledPatches).Count
     }
     client   = $clientRef
+    base     = $baseClient
 }
 
 $path = Join-Path $Out 'manifest.json'

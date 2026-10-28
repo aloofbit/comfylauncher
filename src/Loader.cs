@@ -92,6 +92,8 @@ namespace ComfyLauncher
             app.SelfSha = self.Str("sha256");
             client.ReadAside(home);
             manifest = manifest ?? new Dictionary<string, object>();
+            app.Built = manifest.Str("built");
+            app.Base = manifest.Obj("base");
             var patchNames = manifest.Obj("patchNames");
             var patchLabels = state.Obj("patchLabels");
 
@@ -641,6 +643,18 @@ namespace ComfyLauncher
             var folder = Add("Settings", RowKind.Link, "Open the WoW folder", client.Root);
             folder.Id = "open-folder";
             folder.Url = client.Root;
+            // A button, drawn as a Link is. No Defender under Wine, on a Mac or on Linux.
+            if (!Terminal.UnderWine)
+            {
+                var defender = Add("Settings", RowKind.Link, "Add to Defender exclusions", "Windows asks for admin rights");
+                defender.Id = Defender.Id;
+                defender.Advice = "Stops Windows Defender from removing mod files in the WoW folder.";
+                // The rows are made again after every batch: what the log said stays on.
+                if (Defender.Excluded) Defender.Note(defender);
+            }
+            var check = Add("Settings", RowKind.Link, "Check client", @"a report, to the clipboard and Logs\");
+            check.Id = Report.Id;
+            check.Advice = "Compares the client with the base download, to paste where somebody can help.";
             // Not when the Mac app started it: that app is made already.
             app.OfferMacApp = client.WoWSilicon && Environment.GetEnvironmentVariable(WoWSilicon.FromAppVariable) == null;
             if (app.OfferMacApp && WoWSilicon.AppExists()) app.MacApp.Label = "Update the Mac app";
