@@ -16134,6 +16134,21 @@
     "release_downloads_at": "2026-08-26T23:44:09Z"
   },
   {
+    "name": "LunaUnitFrames",
+    "repo": "https://github.com/Aviana/LunaUnitFrames",
+    "category": "UI",
+    "description": "Replacement unit frames for player, pet, target, party and raid, with heal prediction. Pinned to the 1.12.1 branch.",
+    "source": "owner",
+    "folder": "LunaUnitFrames",
+    "forks": [
+      {
+        "label": "Aviana (1.12.1)",
+        "repo": "https://github.com/Aviana/LunaUnitFrames",
+        "pin_branch": "1.12.1"
+      }
+    ]
+  },
+  {
     "name": "VanillaStoryline Visual Novel",
     "repo": "https://github.com/LordGlarthir/VanillaStoryline-Visual-Novel",
     "category": "UI",

@@ -864,8 +864,8 @@ if (Test-Path -LiteralPath $packagesFile) {
 #
 # Per entry: a readme pasted in as HTML becomes one line of text; `requires`
 # becomes mod ids the launcher can tick; a fork with pin_release becomes a
-# tag zip, which is the one case that does not follow the repo's main branch;
-# a name used twice gets its owner beside it.
+# tag zip, and one with pin_branch a branch zip, the two cases that do not
+# follow the repo's main branch; a name used twice gets its owner beside it.
 Write-Head 'Addon catalog'
 $catalog = $null
 $catalogFile = Join-Path $Here 'lists\addons.json'
@@ -894,8 +894,9 @@ if (Test-Path -LiteralPath $catalogFile) {
         if ($note.Length -gt 160) { $cut = $note.LastIndexOf(' ', 160); $note = $note.Substring(0, $(if ($cut -gt 40) { $cut } else { 160 })) }
         $entry = [ordered]@{ name = "$($e.name)"; repo = "$($e.repo)".TrimEnd('/'); category = "$($e.category)"; note = $note; folder = "$($e.folder)" }
         if ($dupes["$($e.name)".ToLowerInvariant()] -gt 1) { $entry.by = ($entry.repo -split '/')[3] }
-        $pin = @($e.forks | Where-Object { $_ -and $_.pin_release -and "$($_.repo)" -match '^https://github\.com/[^/]+/[^/]+/?$' }) | Select-Object -First 1
-        if ($pin) { $entry.zip = "$($pin.repo)".TrimEnd('/') + "/archive/refs/tags/$($pin.pin_release).zip" }
+        $pin = @($e.forks | Where-Object { $_ -and ($_.pin_release -or $_.pin_branch) -and "$($_.repo)" -match '^https://github\.com/[^/]+/[^/]+/?$' }) | Select-Object -First 1
+        if ($pin.pin_release) { $entry.zip = "$($pin.repo)".TrimEnd('/') + "/archive/refs/tags/$($pin.pin_release).zip" }
+        elseif ($pin) { $entry.zip = "$($pin.repo)".TrimEnd('/') + "/archive/refs/heads/$($pin.pin_branch).zip" }
         $needs = @()
         foreach ($r in @($e.requires | Where-Object { $_ })) {
             $hit = $modIds.Keys | Where-Object { $_.StartsWith("$r".ToLowerInvariant()) } | Select-Object -First 1
