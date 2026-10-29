@@ -222,8 +222,22 @@ namespace ComfyLauncher
                         break;
 
                     case "set aside":
-                        if (p.Type == PartType.Addon)
-                            ops.Add(Aside(app, Rel(app, addon), true));
+                        {
+                            // A RETIRED MOD goes aside part by part, and only the parts on the disk (2026-10-29,
+                            // comfyaim): its dlls.txt line first, so the game never loads a DLL that is not there.
+                            string why = row.Retired ? ", no longer part of ComfyCraft" : "";
+                            if (p.Type == PartType.Addon && (!row.Retired || Directory.Exists(addon)))
+                                ops.Add(Aside(app, Rel(app, addon), true, why));
+                            if (p.Type == PartType.Dll && row.Retired)
+                            {
+                                string file = p.Name;
+                                if (c.DllEnabled(file))
+                                    ops.Add(new Op { Text = "dlls.txt: take out " + file + why, Run = _ => SetDlls(c, new string[0], new[] { file }) });
+                                if (File.Exists(c.PathOf(file))) ops.Add(Aside(app, file, false, why));
+                            }
+                            if (p.Type == PartType.File && row.Retired && File.Exists(c.PathOf(p.Name)))
+                                ops.Add(Aside(app, p.Name, false, why));
+                        }
                         break;
 
                     case "restore":

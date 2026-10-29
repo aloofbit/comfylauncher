@@ -251,12 +251,37 @@ namespace ComfyLauncher
             var sections = new List<(string title, List<Row> rows)>();
             // Files this launcher put there that something else removed.
             var goneFiles = new List<string>();
+            // The addon folders of retired mods, live or set aside. Never the player's own.
+            var retiredAddons = new List<string>();
             foreach (var mod in mods.Where(m => !m.Bool("variant")))
             {
                 string file = mod.Str("file");
                 // A mod is one file in the client's own folder, beside WoW.exe.
                 if (!Safe.IsName(file)) continue;
                 accounted.Add(file);
+
+                // A RETIRED MOD HAS NO ROW TO SHOW (2026-10-29, comfyaim, the /a chat room). Where any of it is on
+                // the disk, a hidden row sets it aside at Start the game, as a supersedes_files mod does at its
+                // update: the dlls.txt line goes and the DLL and addon become .old, never deleted. Its line is
+                // accounted above, so it is not drawn under Also in this client either. The ini stays: comfyaim.ini
+                // holds the player's secret, and nothing reads it without the DLL.
+                if (mod.Bool("retired"))
+                {
+                    var gone = ModParts(mod);
+                    retiredAddons.AddRange(gone.Where(p => p.Type == PartType.Addon).Select(p => p.Name));
+                    bool there = client.DllEnabled(file) || gone.Any(p =>
+                        p.Type == PartType.Addon ? Directory.Exists(client.AddonPath(p.Name)) : File.Exists(client.PathOf(p.Name)));
+                    if (!there) continue;
+                    var retired = new Row
+                    {
+                        Id = "mod:" + file, Tab = "Mods", Kind = RowKind.Check, Label = mod.Str("name"), Note = "no longer part of ComfyCraft",
+                        Hidden = true, Retired = true, Ours = true, Have = Have.Current, StateKey = "mod:" + file,
+                    };
+                    retired.PartList = gone;
+                    retired.Parts = ShowParts(gone);
+                    ourMods.Add(retired);
+                    continue;
+                }
                 bool present = File.Exists(client.PathOf(file));
                 bool enabled = client.DllEnabled(file);
                 bool inject = mod.Get("inject") is bool b ? b : true;
@@ -599,8 +624,11 @@ namespace ComfyLauncher
                     row.Owner = c.Owner;
                 }
             }
-            var theirs = client.AddOns.Where(a => !claimedAddons.Any(c => c.Folder.Equals(a, StringComparison.OrdinalIgnoreCase))).ToList();
-            setAside = setAside.Where(s => !OwnedAside(s)).ToList();
+            // A retired mod's addon is not the player's own, live or set aside: ticking it back would bring an
+            // addon whose DLL went with it.
+            bool Retired(string folder) => retiredAddons.Contains(folder, StringComparer.OrdinalIgnoreCase);
+            var theirs = client.AddOns.Where(a => !claimedAddons.Any(c => c.Folder.Equals(a, StringComparison.OrdinalIgnoreCase)) && !Retired(a)).ToList();
+            setAside = setAside.Where(s => !OwnedAside(s) && !Retired(s)).ToList();
             if (theirs.Count > 0 || setAside.Count > 0)
             {
                 Heading("Addons", "Your addons");

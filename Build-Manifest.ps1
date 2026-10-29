@@ -578,6 +578,14 @@ if (Test-Path -LiteralPath $modsFile) {
         # package that needs it (comfylogin.dll, 2026-10-14). The .ps1
         # launcher does not read it.
         if ($m.hidden) { $entry.hidden = $true }
+        # A MOD WE NO LONGER SHIP, with no successor (comfyaim, 2026-10-29).
+        # It has no url, so the extract map passes through here on its own:
+        # it names what the mod installed, which the C# launcher (1.55) sets
+        # aside. A launcher before 1.55 reads it as a switch with no download.
+        if ($m.retired) {
+            $entry.retired = $true
+            if ($m.extract) { $entry.extract = $m.extract }
+        }
         # Only when there is one. An entry with no url is a switch and nothing
         # else, and writing empty keys beside it would have every mod look
         # fetchable to anything reading the manifest.
@@ -623,7 +631,8 @@ if (Test-Path -LiteralPath $modsFile) {
         }
         $mods += $entry
         Write-Item ("{0,-18} {1,-28} {2}" -f $m.name, $m.file,
-                    $(if (-not $m.url) { 'switch only' }
+                    $(if ($m.retired) { 'retired' }
+                      elseif (-not $m.url) { 'switch only' }
                       elseif ($entry.Contains('inject')) { 'fetch only  ' + $m.version }
                       elseif ($entry.Contains('variant')) { 'variant     ' + $m.version }
                       else { 'fetchable   ' + $m.version }))

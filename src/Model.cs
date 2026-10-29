@@ -92,6 +92,11 @@ namespace ComfyLauncher
         // it, and it goes off when no ticked row needs it.
         public bool Hidden;
 
+        // A MOD WE NO LONGER SHIP, with no successor: comfyaim, the /a chat
+        // room (2026-10-29). Hidden and never ticked, so its action is set
+        // aside while any of it is on the disk, and Start the game does it.
+        public bool Retired;
+
         // A SWITCH, NOT A DOWNLOAD: mods and patches. Unticking one turns it
         // off and keeps the file, so ticking it again costs nothing.
         public bool Toggle;
@@ -217,7 +222,7 @@ namespace ComfyLauncher
                         // moved aside, and Space brings it back. Ours can be
                         // deleted: it can be downloaded again.
                         if (Have == Have.Current || Have == Have.Behind)
-                            return Toggle ? "disable" : Unknown ? "set aside" : "remove";
+                            return Toggle ? "disable" : Unknown || Retired ? "set aside" : "remove";
                         return "";
                     case RowKind.Radio:
                         return On && Have != Have.Current ? "switch" : "";
@@ -692,7 +697,8 @@ namespace ComfyLauncher
                 string key = clients.Keys.FirstOrDefault(k => k.Equals(Client.Root, StringComparison.OrdinalIgnoreCase)) ?? Client.Root;
                 var mine = clients.Obj(key);
                 if (mine == null) clients[key] = mine = new Dictionary<string, object>();
-                if (action == "remove") mine.Remove(row.StateKey);
+                // A retired mod set aside is no longer one this launcher installed.
+                if (action == "remove" || row.Retired) mine.Remove(row.StateKey);
                 else if (action != "disable" && action != "enable")
                     mine[row.StateKey] = row.ChoiceVersion != null ? row.ChoiceVersion[row.Choice] : row.Version;
             }

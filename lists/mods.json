@@ -13,7 +13,8 @@
     "_comment10": "variant: true is another build of a file an earlier entry already names, and it gets a row of its own that says which build is on disk. file_sha256 is the hash of that file AS IT LANDS, which is how the launcher tells the two builds apart, since the name is the same. Unticking a variant puts the plain entry's build back and deletes the variant's other files, so the plain entry must carry a url. It never touches dlls.txt: the plain entry's row stays the on/off switch for the line, whichever build it loads. Anything else the zip holds is left out by naming only what we want, which matters for VanillaHelpers64, whose TexBridgeFullLog.txt switches on verbose logging just by existing.",
     "_comment12": "also lists more downloads that come with a mod, each with url, sha256 and extract: an addon kept in a repo of its own. A mod whose DLL is on the disk and whose addon or ini is not reads reinstall.",
     "_comment11": "section names the heading the C# launcher draws the row under, after Game fixes. Absent means Game fixes. A mod from github.com/aloofbit goes under ComfyCraft whatever it says.",
-    "_comment9":"inject: false means the file is fetched but never written into dlls.txt. VanillaFixes is the only one: it IS the injector, so a checkbox for it would be a switch for the thing that reads the switches. IchaLaunch draws the same line, by leaving the dlls_txt key off that one entry. Such a row is offered only on a client that does not have it, because once it does there is nothing to toggle."
+    "_comment9":"inject: false means the file is fetched but never written into dlls.txt. VanillaFixes is the only one: it IS the injector, so a checkbox for it would be a switch for the thing that reads the switches. IchaLaunch draws the same line, by leaving the dlls_txt key off that one entry. Such a row is offered only on a client that does not have it, because once it does there is nothing to toggle.",
+    "_comment13": "retired: true is a mod we no longer ship, with no successor. The entry keeps file and the extract map of what it installed, and has no url. The launcher draws no row for it. On a client that has it, Start the game takes its line out of dlls.txt and sets its DLL and addon folders aside as .old. Its dlls.txt line and its addon are never shown as the player's own. comfyaim, the /a chat room, is the first (2026-10-29)."
   },
 
   {
@@ -269,16 +270,12 @@
     }
   },
   {
-    "_why": "Added 2026-09-26: the /a chat room, one room for players on any server, through the hub on our VPS (wss://comfycraft.dedyn.io/aim, unit comfy-aim). The pin is our own hash of a fresh download of the release asset, and it matched the digest GitHub publishes for it. Re-pinned 2026-09-27 to v0.1.1-alpha: /a talks and /aim is for settings, Change Name, Sign On and Sign Off, 100 lines of history that survive a hub restart, and a dot command typed in AIM goes to the player's server instead of the room. Then the same day to v0.1.2-alpha, which shows the room's history in the window: lines that came before the window was first opened, the history at sign on and after /reload among them, had been dropped. Re-pinned 2026-09-27 to v0.1.3-alpha, which sends the login address so a player shows their server's tag from servers.txt (COMFY, OCTO) rather than the realm name.",
+    "_why": "Added 2026-09-26: the /a chat room, one room for players on any server, through the hub on our VPS (wss://comfycraft.dedyn.io/aim, unit comfy-aim). The pin is our own hash of a fresh download of the release asset, and it matched the digest GitHub publishes for it. Re-pinned 2026-09-27 to v0.1.1-alpha: /a talks and /aim is for settings, Change Name, Sign On and Sign Off, 100 lines of history that survive a hub restart, and a dot command typed in AIM goes to the player's server instead of the room. Then the same day to v0.1.2-alpha, which shows the room's history in the window: lines that came before the window was first opened, the history at sign on and after /reload among them, had been dropped. Re-pinned 2026-09-27 to v0.1.3-alpha, which sends the login address so a player shows their server's tag from servers.txt (COMFY, OCTO) rather than the realm name. Retired 2026-10-29 (launcher v1.55): players did not use it, and World chat goes to Discord now.",
     "name": "Chat room",
     "file": "comfyaim.dll",
-    "note": "one chat room for every server, /a to talk",
-    "version": "v0.1.4-alpha",
+    "retired": true,
     "from": "https://github.com/aloofbit/comfyaim",
-    "url": "https://github.com/aloofbit/comfyaim/releases/download/v0.1.4-alpha/comfyaim-v0.1.4-alpha.zip",
-    "sha256": "d795aa1e7b5d21f0ddf22c958571686f486d2f11d30d74590b674581f2062637",
-    "file_sha256": "c0ae62ea63552ca2c4273c16302812520384baa6b66d7923c37593e04d6da0d5",
-    "_extract_comment": "NO ini, on purpose. comfyaim.ini holds the player's secret, which is what proves their nick is theirs, and an update rewrites every file named here: shipping the ini would sign every updated player on as nobody, with their nick lost to them. The DLL's built-in defaults are the ini's (live hub, on), and it writes the file itself when it first saves a nick. The addon is /a, the window and the friends list button; the DLL does nothing visible without it.",
+    "_extract_comment": "What it installed, which the launcher sets aside. Nothing is fetched. comfyaim.ini is not named and stays: it holds the player's secret, and without the DLL nothing reads it.",
     "extract": {
       "comfyaim.dll": "comfyaim.dll",
       "Interface/AddOns/ComfyAim/": "Interface/AddOns/ComfyAim/"

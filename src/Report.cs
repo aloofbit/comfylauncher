@@ -107,6 +107,8 @@ namespace ComfyLauncher
 
         static string Have(Row r)
         {
+            // Still on the disk until Start the game sets it aside.
+            if (r.Retired) return "retired, Start the game sets it aside";
             switch (r.Have)
             {
                 case ComfyLauncher.Have.Current: return "current";
