@@ -2852,6 +2852,13 @@
     "description": "creates a grid on your screen to aid you in aligning and centering your UI",
     "source": "turtle_wiki",
     "folder": "BetterAlign",
+    "forks": [
+      {
+        "label": "DennisWG (1.12)",
+        "repo": "https://github.com/DennisWG/BetterAlign",
+        "pin_release": "0.1.0"
+      }
+    ],
     "release_downloads_repo": "DennisWG/BetterAlign",
     "release_downloads_state": "ok",
     "release_downloads": 679,
