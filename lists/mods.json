@@ -58,10 +58,10 @@
     "name": "Interact",
     "file": "Interact.dll",
     "note": "a key that loots, gathers, talks to whoever you are facing and catches your fish",
-    "version": "v0.1.0-alpha",
+    "version": "v0.1.1-alpha",
     "from": "https://github.com/aloofbit/InteractNew",
-    "url": "https://github.com/aloofbit/InteractNew/releases/download/v0.1.0-alpha/Interact.zip",
-    "sha256": "3bf02d9f3150cd0f599e0595da3b0a4f561b90be2d5d683684bf7d6babaa17da",
+    "url": "https://github.com/aloofbit/InteractNew/releases/download/v0.1.1-alpha/Interact.zip",
+    "sha256": "64a3883c54c025a016cd5994b9f97bacc97e92c5f5de97d0b77be62c24075682",
     "extract": {
       "Interact.dll": "Interact.dll",
       "Interface/AddOns/Interact/": "Interface/AddOns/Interact/"
