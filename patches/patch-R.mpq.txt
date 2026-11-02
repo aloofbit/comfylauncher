@@ -1,3 +1,3 @@
-Comfy Reforged fixes: Characters and gear models with their culling box corrected, and HD skins for Turtle's frogs
+Comfy Reforged fixes: Characters and gear models with their culling box corrected, HD skins for Turtle's frogs, and the Hallow's End cat with its classic skin
 X-Package: reforged-characters
-X-Was: 16021612
+X-Was: 16021612, 17605555
